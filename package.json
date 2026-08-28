@@ -1,0 +1,132 @@
+{
+  "name": "smartbookmarks",
+  "displayName": "Smart Bookmarks",
+  "description": "Bookmarks that follow your code symbols, not line numbers",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "smartBookmarksContainer",
+          "title": "Smart Bookmarks",
+          "icon": "$(bookmark)"
+        }
+      ]
+    },
+    "views": {
+      "smartBookmarksContainer": [
+        {
+          "id": "smartBookmarksView",
+          "name": "Smart Bookmarks"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "smartbookmarks.addBookmark",
+        "title": "Smart Bookmark: Add/Remove Bookmark",
+        "category": "Smart Bookmarks"
+      },
+      {
+        "command": "smartbookmarks.nextBookmark",
+        "title": "Smart Bookmark: Next Bookmark",
+        "category": "Smart Bookmarks"
+      },
+      {
+        "command": "smartbookmarks.previousBookmark",
+        "title": "Smart Bookmark: Previous Bookmark",
+        "category": "Smart Bookmarks"
+      },
+      {
+        "command": "smartbookmarks.listBookmarks",
+        "title": "Smart Bookmark: List All Bookmarks",
+        "category": "Smart Bookmarks"
+      },
+      {
+        "command": "smartbookmarks.clearBookmarks",
+        "title": "Smart Bookmark: Clear All Bookmarks",
+        "category": "Smart Bookmarks"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "smartbookmarks.addBookmark",
+        "key": "ctrl+shift+alt+m",
+        "mac": "cmd+shift+alt+m"
+      },
+      {
+        "command": "smartbookmarks.nextBookmark",
+        "key": "ctrl+alt+n",
+        "mac": "cmd+alt+n"
+      },
+      {
+        "command": "smartbookmarks.previousBookmark",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
+      },
+      {
+        "command": "smartbookmarks.clearBookmarks",
+        "key": "ctrl+alt+c",
+        "mac": "cmd+alt+c"
+      }
+    ],
+    "configuration": {
+      "title": "Smart Bookmarks",
+      "properties": {
+        "smartbookmarks.persistBookmarks": {
+          "type": "boolean",
+          "default": true,
+          "description": "Persist bookmarks between sessions"
+        },
+        "smartbookmarks.autoFollowSymbols": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically update bookmark positions when symbols are renamed/moved"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run lint && node esbuild.js",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.134.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "typescript-eslint": "^8.61.1",
+    "eslint": "^10.5.0",
+    "esbuild": "^0.28.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^6.0.3",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0"
+  },
+  "dependencies": {
+    "web-tree-sitter": "^0.20.8"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.4"
+  }
+}
