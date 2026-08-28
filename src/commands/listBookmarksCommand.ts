@@ -7,14 +7,28 @@ export class ListBookmarksCommand {
     constructor(private provider: BookmarkProvider) { }
 
     async execute(): Promise<void> {
-        const bookmarks = this.provider.getBookmarks();
+        const activeEditor = vscode.window.activeTextEditor;
+
+        // 1. Chercher d'abord les signets du fichier actif
+        let bookmarks = activeEditor
+            ? this.provider.getForFile(activeEditor.document.uri.fsPath)
+            : [];
+
+        // 2. Si le fichier actif n'a pas de signet (ou pas d'éditeur ouvert), charger TOUS les signets
+        if (bookmarks.length === 0) {
+            bookmarks = this.provider.getBookmarks();
+        }
 
         if (bookmarks.length === 0) {
-            vscode.window.showInformationMessage('No bookmarks');
+            vscode.window.showInformationMessage('No bookmarks found');
             return;
         }
 
-        const items = bookmarks.map(b => ({
+        // Trier les signets par ligne
+        const sortedBookmarks = [...bookmarks].sort((a, b) => a.line - b.line);
+
+        // 3. Préparer les éléments pour le QuickPick
+        const items = sortedBookmarks.map(b => ({
             label: `📍 ${b.symbolName}`,
             description: `line ${b.line}`,
             detail: b.filePath,
@@ -35,10 +49,9 @@ export class ListBookmarksCommand {
         const doc = await vscode.workspace.openTextDocument(uri);
         const editor = await vscode.window.showTextDocument(doc);
 
-        const position = new vscode.Position(
-            bookmark.range.start.line,
-            0
-        );
+        // Utiliser bookmark.line (-1 pour l'index 0-based de VS Code)
+        const lineIndex = Math.max(0, bookmark.line - 1);
+        const position = new vscode.Position(lineIndex, 0);
 
         editor.selection = new vscode.Selection(position, position);
         editor.revealRange(
