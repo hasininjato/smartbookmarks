@@ -34,46 +34,79 @@ export class BookmarkProvider {
                 if (lineDelta === 0) { continue; }
 
                 const changeLine = change.range.start.line;
-                const changeCharacter = change.range.start.character;
+                const changeChar = change.range.start.character;
 
                 for (const bookmark of fileBookmarks) {
-                    const startLine = bookmark.line - 1; // 0-based
+                    const startLine = bookmark.line - 1; // 0-based index
                     const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
 
-                    // CAS 1 : L'ÉDITION SE FAIT STRICTEMENT AU-DESSUS DU SIGNET
-                    // (Ou sur la ligne 1 MAIS au tout début de la ligne, col 0)
-                    if (changeLine < startLine || (changeLine === startLine && changeCharacter === 0)) {
+                    // -------------------------------------------------------------
+                    // CAS 1 : Tape/Saut de ligne STRICTEMENT AVANT le signet
+                    // -> L'icône ET toute la plage violette descendent intactes
+                    // -------------------------------------------------------------
+                    if (changeLine < startLine) {
                         bookmark.line += lineDelta;
                         if (bookmark.line < 1) { bookmark.line = 1; }
 
-                        const lineIndex = bookmark.line - 1;
-                        bookmark.range = new vscode.Range(lineIndex, 0, lineIndex, 0);
+                        const newLineIndex = bookmark.line - 1;
+                        bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
 
                         if (bookmark.highlightRange) {
                             bookmark.highlightRange.startLine += lineDelta;
                             bookmark.highlightRange.endLine += lineDelta;
                         }
-
-                        bookmark.updatedAt = Date.now();
-                        this.bookmarks.set(bookmark.id, bookmark);
                         hasChanged = true;
                     }
-                    // CAS 2 : L'ÉDITION SE FAIT À L'INTÉRIEUR DE LA PLAGE
-                    // (Inclut le milieu/fin de la 1re ligne jusqu'à la dernière ligne)
-                    else if (changeLine >= startLine && changeLine <= endLine) {
-                        if (bookmark.highlightRange) {
-                            // Le signet ne bouge pas (sa position haute reste intacte),
-                            // seule la fin de la plage s'allonge vers le bas !
-                            bookmark.highlightRange.endLine += lineDelta;
+                    // -------------------------------------------------------------
+                    // CAS 2 : Tape/Saut de ligne SUR LA 1RE LIGNE DU SIGNET
+                    // -------------------------------------------------------------
+                    else if (changeLine === startLine) {
+                        // A. Si on est au début de la ligne (colonne 0) -> Le bloc complet descend
+                        const lineText = event.document.lineAt(changeLine).text;
+                        const textBeforeChange = lineText.substring(0, changeChar);
+                        // if (changeChar === 0) {
+                        if (textBeforeChange.trim() === '') {
+                            bookmark.line += lineDelta;
+                            if (bookmark.line < 1) { bookmark.line = 1; }
 
-                            if (bookmark.highlightRange.endLine < bookmark.highlightRange.startLine) {
-                                bookmark.highlightRange.endLine = bookmark.highlightRange.startLine;
+                            const newLineIndex = bookmark.line - 1;
+                            bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
+
+                            if (bookmark.highlightRange) {
+                                bookmark.highlightRange.startLine += lineDelta;
+                                bookmark.highlightRange.endLine += lineDelta;
                             }
-
-                            bookmark.updatedAt = Date.now();
-                            this.bookmarks.set(bookmark.id, bookmark);
-                            hasChanged = true;
                         }
+                        // B. Si on est au milieu/fin de la ligne -> Seule la plage violette s'allonge vers le bas
+                        else {
+                            if (bookmark.highlightRange) {
+                                bookmark.highlightRange.endLine += lineDelta;
+                            }
+                        }
+                        hasChanged = true;
+                    }
+                    // -------------------------------------------------------------
+                    // CAS 3 : Tape/Saut de ligne À L'INTÉRIEUR de la plage (Ligne 2 et +)
+                    // -> L'icône reste en haut, seule la fin de la plage violette s'étire
+                    // -------------------------------------------------------------
+                    else if (changeLine > startLine && changeLine <= endLine) {
+                        if (bookmark.highlightRange) {
+                            bookmark.highlightRange.endLine += lineDelta;
+                        }
+                        hasChanged = true;
+                    }
+
+                    // Sécurité pour éviter les index négatifs
+                    if (bookmark.highlightRange) {
+                        if (bookmark.highlightRange.startLine < 0) { bookmark.highlightRange.startLine = 0; }
+                        if (bookmark.highlightRange.endLine < bookmark.highlightRange.startLine) {
+                            bookmark.highlightRange.endLine = bookmark.highlightRange.startLine;
+                        }
+                    }
+
+                    if (hasChanged) {
+                        bookmark.updatedAt = Date.now();
+                        this.bookmarks.set(bookmark.id, bookmark);
                     }
                 }
             }
