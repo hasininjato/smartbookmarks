@@ -2,15 +2,29 @@ import * as vscode from 'vscode';
 import { BookmarkProvider } from './bookmarkProvider';
 
 export class BookmarkDecorationProvider implements vscode.Disposable {
-    private decorationType: vscode.TextEditorDecorationType;
+    // 1. Icône de la 1re ligne dans la marge de gauche
+    private gutterDecorationType: vscode.TextEditorDecorationType;
+
+    // 2. Ligne verticale à GAUCHE (dans la marge / à côté des numéros de lignes)
+    private leftBorderDecorationType: vscode.TextEditorDecorationType;
+
     private disposables: vscode.Disposable[] = [];
 
     constructor(private provider: BookmarkProvider) {
-        this.decorationType = vscode.window.createTextEditorDecorationType({
+        // Icône bleue sur la première ligne
+        this.gutterDecorationType = vscode.window.createTextEditorDecorationType({
             gutterIconPath: this.getIconPath(),
             gutterIconSize: '80%',
-            overviewRulerColor: '#FFA500',
+            overviewRulerColor: '#2196F3',
             overviewRulerLane: vscode.OverviewRulerLane.Right
+        });
+
+        // Barre verticale bleue collée à gauche de la ligne (à côté des numéros)
+        this.leftBorderDecorationType = vscode.window.createTextEditorDecorationType({
+            isWholeLine: true,
+            borderWidth: '0 0 0 4px', // Épaisseur de 4px uniquement à gauche
+            borderStyle: 'solid',
+            borderColor: '#A855F7'    // Mêrme bleu que l'icône
         });
 
         this.disposables.push(
@@ -41,25 +55,38 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
         if (!editor) { return; }
 
         const bookmarks = this.provider.getForFile(editor.document.uri.fsPath);
-        const decorations: vscode.DecorationOptions[] = [];
+
+        const gutterDecorations: vscode.DecorationOptions[] = [];
+        const leftBorderRanges: vscode.Range[] = [];
 
         for (const bookmark of bookmarks) {
             const lineIndex = bookmark.line - 1;
 
             if (lineIndex >= 0 && lineIndex < editor.document.lineCount) {
+                // A. Icône sur la 1re ligne
                 const range = new vscode.Range(lineIndex, 0, lineIndex, 0);
-                decorations.push({
+                gutterDecorations.push({
                     range,
                     hoverMessage: `📌 **${bookmark.symbolName}** (Ligne ${bookmark.line})`
                 });
+
+                // B. Barre verticale à gauche sur toute la sélection (1re à dernière ligne)
+                if (bookmark.highlightRange) {
+                    leftBorderRanges.push(new vscode.Range(
+                        bookmark.highlightRange.startLine, 0,
+                        bookmark.highlightRange.endLine, 0
+                    ));
+                }
             }
         }
 
-        editor.setDecorations(this.decorationType, decorations);
+        editor.setDecorations(this.gutterDecorationType, gutterDecorations);
+        editor.setDecorations(this.leftBorderDecorationType, leftBorderRanges);
     }
 
     dispose(): void {
         this.disposables.forEach(d => d.dispose());
-        this.decorationType.dispose();
+        this.gutterDecorationType.dispose();
+        this.leftBorderDecorationType.dispose();
     }
 }

@@ -9,6 +9,10 @@ export interface Bookmark {
     line: number;
     createdAt: number;
     updatedAt: number;
+    highlightRange?: {
+        startLine: number;
+        endLine: number;
+    };
 }
 
 export interface SymbolInfo {

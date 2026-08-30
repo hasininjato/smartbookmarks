@@ -15,7 +15,7 @@ export class BookmarkProvider {
     }
 
     private setupListeners(): void {
-        // 1. MISE À JOUR FIABLE DES POSITIONS
+        // 1. MISE À JOUR DYNAMIQUE DES POSITIONS ET DES PLAGES
         vscode.workspace.onDidChangeTextDocument((event) => {
             const filePath = event.document.uri.fsPath;
             const fileBookmarks = this.getForFile(filePath);
@@ -27,36 +27,53 @@ export class BookmarkProvider {
             let hasChanged = false;
 
             for (const change of event.contentChanges) {
-                // Nombre de lignes ajoutées/retirées lors de ce changement précis
                 const linesAdded = (change.text.match(/\n/g) || []).length;
                 const linesRemoved = change.range.end.line - change.range.start.line;
                 const lineDelta = linesAdded - linesRemoved;
 
                 if (lineDelta === 0) { continue; }
 
-                // Ligne de départ du changement (0-based pour l'API VS Code)
-                const startLine = change.range.start.line;
+                const changeLine = change.range.start.line;
+                const changeCharacter = change.range.start.character;
 
                 for (const bookmark of fileBookmarks) {
-                    const bookmarkLine0Based = bookmark.line - 1;
+                    const startLine = bookmark.line - 1; // 0-based
+                    const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
 
-                    // 💡 RÈGLE ABSOLUE :
-                    // - Si le signet est sur une ligne strictement inférieure à l'édition : ne bouge pas.
-                    // - Si le signet est SUR ou SOUS la ligne modifiée : il suit la modification (lineDelta).
-                    if (bookmarkLine0Based >= startLine) {
+                    // CAS 1 : L'ÉDITION SE FAIT STRICTEMENT AU-DESSUS DU SIGNET
+                    // (Ou sur la ligne 1 MAIS au tout début de la ligne, col 0)
+                    if (changeLine < startLine || (changeLine === startLine && changeCharacter === 0)) {
                         bookmark.line += lineDelta;
-
-                        // Sécurité pour ne jamais avoir une ligne négative
-                        if (bookmark.line < 1) {
-                            bookmark.line = 1;
-                        }
+                        if (bookmark.line < 1) { bookmark.line = 1; }
 
                         const lineIndex = bookmark.line - 1;
                         bookmark.range = new vscode.Range(lineIndex, 0, lineIndex, 0);
-                        bookmark.updatedAt = Date.now();
 
+                        if (bookmark.highlightRange) {
+                            bookmark.highlightRange.startLine += lineDelta;
+                            bookmark.highlightRange.endLine += lineDelta;
+                        }
+
+                        bookmark.updatedAt = Date.now();
                         this.bookmarks.set(bookmark.id, bookmark);
                         hasChanged = true;
+                    }
+                    // CAS 2 : L'ÉDITION SE FAIT À L'INTÉRIEUR DE LA PLAGE
+                    // (Inclut le milieu/fin de la 1re ligne jusqu'à la dernière ligne)
+                    else if (changeLine >= startLine && changeLine <= endLine) {
+                        if (bookmark.highlightRange) {
+                            // Le signet ne bouge pas (sa position haute reste intacte),
+                            // seule la fin de la plage s'allonge vers le bas !
+                            bookmark.highlightRange.endLine += lineDelta;
+
+                            if (bookmark.highlightRange.endLine < bookmark.highlightRange.startLine) {
+                                bookmark.highlightRange.endLine = bookmark.highlightRange.startLine;
+                            }
+
+                            bookmark.updatedAt = Date.now();
+                            this.bookmarks.set(bookmark.id, bookmark);
+                            hasChanged = true;
+                        }
                     }
                 }
             }
@@ -107,10 +124,14 @@ export class BookmarkProvider {
         });
     }
 
-    toggle(symbol: SymbolInfo, filePath: string, cursorLine: number): Bookmark | null {
+    toggle(
+        symbol: SymbolInfo,
+        filePath: string,
+        cursorLine: number,
+        highlightRange?: { startLine: number; endLine: number }
+    ): Bookmark | null {
         const line = cursorLine + 1; // 1-based index
 
-        // Cherche un signet sur la LIGNE PRÉCISE du curseur
         const existingBookmark = this.getForFile(filePath).find(b => b.line === line);
 
         if (existingBookmark) {
@@ -120,7 +141,6 @@ export class BookmarkProvider {
             return null;
         }
 
-        // ID UNIQUE
         const id = `${filePath}::${Date.now()}::${Math.random().toString(36).substring(2, 7)}`;
         const lineRange = new vscode.Range(cursorLine, 0, cursorLine, 0);
 
@@ -132,7 +152,8 @@ export class BookmarkProvider {
             range: lineRange,
             line: line,
             createdAt: Date.now(),
-            updatedAt: Date.now()
+            updatedAt: Date.now(),
+            highlightRange
         };
 
         this.bookmarks.set(id, bookmark);

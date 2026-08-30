@@ -15,38 +15,43 @@ export class AddBookmarkCommand {
         }
 
         const document = editor.document;
-        const position = editor.selection.active;
+        const selection = editor.selection;
 
-        // Récupération des infos du symbole AST sous le curseur
-        const symbol = await getSymbolAtPosition(document, position);
+        const startLine = selection.start.line;
+        const endLine = selection.end.line;
 
-        // On force la Range à être UNIQUEMENT la ligne active du curseur
-        const lineRange = new vscode.Range(
-            position.line, 0,
-            position.line, 0
-        );
+        // Récupération du symbole sur la première ligne de la sélection
+        const symbol = await getSymbolAtPosition(document, selection.start);
 
-        // commands/addBookmarkCommand.ts (dans la méthode execute)
+        const lineRange = new vscode.Range(startLine, 0, startLine, 0);
 
         const symbolInfo = symbol ? {
-            name: `${symbol.name} (Ligne ${position.line + 1})`, // 👈 On ajoute la ligne pour distinguer les signets d'une même fonction
+            name: `${symbol.name} (Ligne ${startLine + 1})`,
             kind: symbol.kind,
             range: lineRange,
             selectionRange: lineRange
         } : {
-            name: `Ligne ${position.line + 1}`,
+            name: `Ligne ${startLine + 1}`,
             kind: vscode.SymbolKind.Null,
             range: lineRange,
             selectionRange: lineRange
         };
 
-        console.log(position.line);
-        const bookmark = this.provider.toggle(symbolInfo, document.uri.fsPath, position.line);
+        // Si plusieurs lignes sont sélectionnées, on sauvegarde la plage complète (1re à dernière ligne)
+        let highlightRange: { startLine: number; endLine: number } | undefined = undefined;
+        if (endLine > startLine) {
+            highlightRange = {
+                startLine: startLine,
+                endLine: endLine
+            };
+        }
+
+        const bookmark = this.provider.toggle(symbolInfo, document.uri.fsPath, startLine, highlightRange);
 
         if (bookmark) {
-            vscode.window.showInformationMessage(`📌 Signet ajouté : ${symbolInfo.name} (Ligne ${position.line + 1})`);
+            vscode.window.showInformationMessage(`📌 Signet ajouté : ${symbolInfo.name}`);
         } else {
-            vscode.window.showInformationMessage(`🗑️ Signet supprimé (Ligne ${position.line + 1})`);
+            vscode.window.showInformationMessage(`🗑️ Signet supprimé (Ligne ${startLine + 1})`);
         }
     }
 }
