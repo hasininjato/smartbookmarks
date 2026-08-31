@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { Bookmark, SymbolInfo } from '../types';
 import { Storage } from '../storage/storage';
+import * as os from 'os';
+import { getGitUser } from '../utils/gitUser';
 
 export class BookmarkProvider {
     private bookmarks: Map<string, Bookmark> = new Map();
@@ -190,7 +192,7 @@ export class BookmarkProvider {
         cursorLine: number,
         highlightRange?: { startLine: number; endLine: number }
     ): Bookmark | null {
-        const line = cursorLine + 1; // 1-based index
+        const line = cursorLine + 1;
 
         const existingBookmark = this.getForFile(filePath).find(b => b.line === line);
 
@@ -204,6 +206,15 @@ export class BookmarkProvider {
         const id = `${filePath}::${Date.now()}::${Math.random().toString(36).substring(2, 7)}`;
         const lineRange = new vscode.Range(cursorLine, 0, cursorLine, 0);
 
+        const now = Date.now();
+        const formattedDate = new Date(now).toLocaleString('fr-FR', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+        });
+
+        // --- APPEL DE LA FONCTION DÉDIÉE ---
+        const user = getGitUser(filePath);
+
         const bookmark: Bookmark = {
             id,
             symbolName: symbol.name,
@@ -211,8 +222,10 @@ export class BookmarkProvider {
             filePath,
             range: lineRange,
             line: line,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
+            createdAt: now,
+            updatedAt: now,
+            author: user.name,                   // Ex: "Jean Dupont" ou "jdupont"
+            createdDateFormatted: formattedDate, // Ex: "31/08/2026 14:30"
             highlightRange
         };
 

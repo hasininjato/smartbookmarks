@@ -13,6 +13,8 @@ export interface Bookmark {
         startLine: number;
         endLine: number;
     };
+    createdDateFormatted?: string;
+    author?: string;
 }
 
 export interface SymbolInfo {
