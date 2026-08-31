@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
 import { BookmarkProvider } from '../providers/bookmarkProvider';
 
-export class ClearBookmarksCommand {
-    public readonly commandId = 'smartbookmarks.clearBookmarks';
+export class ClearAllBookmarksCommand {
+    public readonly commandId = 'smartbookmarks.clearAllBookmarks';
 
     constructor(private provider: BookmarkProvider) { }
 

@@ -248,6 +248,21 @@ export class BookmarkProvider {
         this._onDidChangeBookmarks.fire();
     }
 
+    clearForFile(filePath: string): void {
+        let hasChanged = false;
+        for (const [id, bookmark] of this.bookmarks) {
+            if (bookmark.filePath === filePath) {
+                this.bookmarks.delete(id);
+                hasChanged = true;
+            }
+        }
+
+        if (hasChanged) {
+            this.save();
+            this._onDidChangeBookmarks.fire();
+        }
+    }
+
     private save(): void {
         this.storage.save(this.getBookmarks());
     }
