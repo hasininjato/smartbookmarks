@@ -15,7 +15,7 @@ export class BookmarkProvider {
     }
 
     private setupListeners(): void {
-        // 1. MISE À JOUR DYNAMIQUE DES POSITIONS ET DES PLAGES
+        // 1. GESTION DES MODIFICATIONS DE TEXTE (DÉPLACEMENT ET NETTOYAGE)
         vscode.workspace.onDidChangeTextDocument((event) => {
             const filePath = event.document.uri.fsPath;
             const fileBookmarks = this.getForFile(filePath);
@@ -31,20 +31,44 @@ export class BookmarkProvider {
                 const linesRemoved = change.range.end.line - change.range.start.line;
                 const lineDelta = linesAdded - linesRemoved;
 
-                if (lineDelta === 0) { continue; }
-
-                const changeLine = change.range.start.line;
-                const changeChar = change.range.start.character;
+                const changeStartLine = change.range.start.line; // 0-based index
+                const changeEndLine = change.range.end.line;     // 0-based index
 
                 for (const bookmark of fileBookmarks) {
                     const startLine = bookmark.line - 1; // 0-based index
                     const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
 
-                    // -------------------------------------------------------------
-                    // CAS 1 : Tape/Saut de ligne STRICTEMENT AVANT le signet
-                    // -> L'icône ET toute la plage violette descendent intactes
-                    // -------------------------------------------------------------
-                    if (changeLine < startLine) {
+                    // -----------------------------------------------------------------
+                    // 1. SUPPRESSION STRICTE : Seulement si la sélection effacée englobe 
+                    //    TOTALEMENT la plage du signet (début strict avant, fin stricte après)
+                    // -----------------------------------------------------------------
+                    const strictlyContainsBookmark = changeStartLine < startLine && changeEndLine > endLine;
+                    const isOutOfBounds = bookmark.line > event.document.lineCount;
+
+                    if (strictlyContainsBookmark || isOutOfBounds) {
+                        this.bookmarks.delete(bookmark.id);
+                        hasChanged = true;
+                        continue;
+                    }
+
+                    // Si aucune ligne n'a été ajoutée ni retirée (ex: frappe de texte simple sur la ligne)
+                    if (lineDelta === 0) {
+                        // On vérifie juste si la ligne du signet n'est pas devenue vide suite à un effacement
+                        if (startLine < event.document.lineCount) {
+                            const currentLineText = event.document.lineAt(startLine).text;
+                            // Si l'utilisateur a totalement vidé la ligne où se trouve le symbole
+                            if (currentLineText.trim() === '' && bookmark.symbolName.trim() !== '') {
+                                // Optionnel : décommente la ligne ci-dessous si tu veux supprimer si la ligne est vide
+                                // this.bookmarks.delete(bookmark.id); hasChanged = true; continue;
+                            }
+                        }
+                        continue;
+                    }
+
+                    // -----------------------------------------------------------------
+                    // 2. DÉPLACEMENT DU SIGNET (Saut de ligne / Suppr AVANT le signet)
+                    // -----------------------------------------------------------------
+                    if (changeStartLine < startLine && changeEndLine < startLine) {
                         bookmark.line += lineDelta;
                         if (bookmark.line < 1) { bookmark.line = 1; }
 
@@ -57,14 +81,14 @@ export class BookmarkProvider {
                         }
                         hasChanged = true;
                     }
-                    // -------------------------------------------------------------
-                    // CAS 2 : Tape/Saut de ligne SUR LA 1RE LIGNE DU SIGNET
-                    // -------------------------------------------------------------
-                    else if (changeLine === startLine) {
-                        // A. Si on est au début de la ligne (colonne 0) -> Le bloc complet descend
-                        const lineText = event.document.lineAt(changeLine).text;
-                        const textBeforeChange = lineText.substring(0, changeChar);
-                        // if (changeChar === 0) {
+                    // -----------------------------------------------------------------
+                    // 3. ÉDITION SUR LA LIGNE MÊME DU SIGNET
+                    // -----------------------------------------------------------------
+                    else if (changeStartLine === startLine) {
+                        const lineText = event.document.lineAt(changeStartLine).text;
+                        const textBeforeChange = lineText.substring(0, change.range.start.character);
+
+                        // Si le saut de ligne est fait tout au début de la ligne (avant le code)
                         if (textBeforeChange.trim() === '') {
                             bookmark.line += lineDelta;
                             if (bookmark.line < 1) { bookmark.line = 1; }
@@ -76,27 +100,23 @@ export class BookmarkProvider {
                                 bookmark.highlightRange.startLine += lineDelta;
                                 bookmark.highlightRange.endLine += lineDelta;
                             }
-                        }
-                        // B. Si on est au milieu/fin de la ligne -> Seule la plage violette s'allonge vers le bas
-                        else {
-                            if (bookmark.highlightRange) {
-                                bookmark.highlightRange.endLine += lineDelta;
-                            }
+                        } else if (bookmark.highlightRange) {
+                            // Si le saut de ligne est fait au milieu/fin, on étire la plage sans déplacer le début
+                            bookmark.highlightRange.endLine += lineDelta;
                         }
                         hasChanged = true;
                     }
-                    // -------------------------------------------------------------
-                    // CAS 3 : Tape/Saut de ligne À L'INTÉRIEUR de la plage (Ligne 2 et +)
-                    // -> L'icône reste en haut, seule la fin de la plage violette s'étire
-                    // -------------------------------------------------------------
-                    else if (changeLine > startLine && changeLine <= endLine) {
+                    // -----------------------------------------------------------------
+                    // 4. ÉDITION À L'INTÉRIEUR DE LA PLAGE PLURI-LIGNES
+                    // -----------------------------------------------------------------
+                    else if (changeStartLine > startLine && changeStartLine <= endLine) {
                         if (bookmark.highlightRange) {
                             bookmark.highlightRange.endLine += lineDelta;
                         }
                         hasChanged = true;
                     }
 
-                    // Sécurité pour éviter les index négatifs
+                    // Sécurités sur les bornes
                     if (bookmark.highlightRange) {
                         if (bookmark.highlightRange.startLine < 0) { bookmark.highlightRange.startLine = 0; }
                         if (bookmark.highlightRange.endLine < bookmark.highlightRange.startLine) {
