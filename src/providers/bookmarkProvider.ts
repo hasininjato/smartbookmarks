@@ -39,57 +39,10 @@ export class BookmarkProvider {
                     const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
 
                     // -----------------------------------------------------------------
-                    // 1. SUPPRESSION STRICTE : Seulement si la sélection effacée englobe 
-                    //    TOTALEMENT la plage du signet (début strict avant, fin stricte après)
+                    // CAS A : Suppression STRICTEMENT AVANT la ligne du signet (ex: lignes 1 à 10)
                     // -----------------------------------------------------------------
-                    const strictlyContainsBookmark = changeStartLine < startLine && changeEndLine > endLine;
-                    const isOutOfBounds = bookmark.line > event.document.lineCount;
-
-                    if (strictlyContainsBookmark || isOutOfBounds) {
-                        this.bookmarks.delete(bookmark.id);
-                        hasChanged = true;
-                        continue;
-                    }
-
-                    // Si aucune ligne n'a été ajoutée ni retirée (ex: frappe de texte simple sur la ligne)
-                    if (lineDelta === 0) {
-                        // On vérifie juste si la ligne du signet n'est pas devenue vide suite à un effacement
-                        if (startLine < event.document.lineCount) {
-                            const currentLineText = event.document.lineAt(startLine).text;
-                            // Si l'utilisateur a totalement vidé la ligne où se trouve le symbole
-                            if (currentLineText.trim() === '' && bookmark.symbolName.trim() !== '') {
-                                // Optionnel : décommente la ligne ci-dessous si tu veux supprimer si la ligne est vide
-                                // this.bookmarks.delete(bookmark.id); hasChanged = true; continue;
-                            }
-                        }
-                        continue;
-                    }
-
-                    // -----------------------------------------------------------------
-                    // 2. DÉPLACEMENT DU SIGNET (Saut de ligne / Suppr AVANT le signet)
-                    // -----------------------------------------------------------------
-                    if (changeStartLine < startLine && changeEndLine < startLine) {
-                        bookmark.line += lineDelta;
-                        if (bookmark.line < 1) { bookmark.line = 1; }
-
-                        const newLineIndex = bookmark.line - 1;
-                        bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
-
-                        if (bookmark.highlightRange) {
-                            bookmark.highlightRange.startLine += lineDelta;
-                            bookmark.highlightRange.endLine += lineDelta;
-                        }
-                        hasChanged = true;
-                    }
-                    // -----------------------------------------------------------------
-                    // 3. ÉDITION SUR LA LIGNE MÊME DU SIGNET
-                    // -----------------------------------------------------------------
-                    else if (changeStartLine === startLine) {
-                        const lineText = event.document.lineAt(changeStartLine).text;
-                        const textBeforeChange = lineText.substring(0, change.range.start.character);
-
-                        // Si le saut de ligne est fait tout au début de la ligne (avant le code)
-                        if (textBeforeChange.trim() === '') {
+                    if (changeEndLine < startLine) {
+                        if (lineDelta !== 0) {
                             bookmark.line += lineDelta;
                             if (bookmark.line < 1) { bookmark.line = 1; }
 
@@ -100,33 +53,87 @@ export class BookmarkProvider {
                                 bookmark.highlightRange.startLine += lineDelta;
                                 bookmark.highlightRange.endLine += lineDelta;
                             }
-                        } else if (bookmark.highlightRange) {
-                            // Si le saut de ligne est fait au milieu/fin, on étire la plage sans déplacer le début
-                            bookmark.highlightRange.endLine += lineDelta;
+                            bookmark.updatedAt = Date.now();
+                            this.bookmarks.set(bookmark.id, bookmark);
+                            hasChanged = true;
                         }
+                    }
+                    // -----------------------------------------------------------------
+                    // CAS B : Remontée du code (Shift+Haut depuis l.40 col 0 vers l.37 + Backspace)
+                    // La suppression démarre au-dessus du signet et s'arrête sur/juste avant sa ligne.
+                    // -----------------------------------------------------------------
+                    else if (changeStartLine < startLine && changeEndLine <= startLine) {
+                        const targetLine = changeStartLine + 1; // 1-based (ex: 37)
+                        const diff = targetLine - bookmark.line;
+
+                        bookmark.line = targetLine;
+                        const newLineIndex = bookmark.line - 1;
+                        bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
+
+                        if (bookmark.highlightRange) {
+                            bookmark.highlightRange.startLine += diff;
+                            bookmark.highlightRange.endLine += diff;
+                        }
+
+                        bookmark.updatedAt = Date.now();
+                        this.bookmarks.set(bookmark.id, bookmark);
                         hasChanged = true;
                     }
                     // -----------------------------------------------------------------
-                    // 4. ÉDITION À L'INTÉRIEUR DE LA PLAGE PLURI-LIGNES
+                    // CAS C : SUPPRESSION DU SIGNET (La sélection s'étend au-delà du signet)
+                    // -----------------------------------------------------------------
+                    else if (
+                        (changeStartLine <= startLine && changeEndLine > endLine) ||
+                        bookmark.line > event.document.lineCount
+                    ) {
+                        this.bookmarks.delete(bookmark.id);
+                        hasChanged = true;
+                    }
+                    // -----------------------------------------------------------------
+                    // CAS D : ÉDITION SUR LA LIGNE MÊME DU SIGNET
+                    // -----------------------------------------------------------------
+                    else if (changeStartLine === startLine) {
+                        if (lineDelta !== 0) {
+                            const lineText = event.document.lineAt(changeStartLine).text;
+                            const textBeforeChange = lineText.substring(0, change.range.start.character);
+
+                            if (textBeforeChange.trim() === '') {
+                                bookmark.line += lineDelta;
+                                if (bookmark.line < 1) { bookmark.line = 1; }
+
+                                const newLineIndex = bookmark.line - 1;
+                                bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
+
+                                if (bookmark.highlightRange) {
+                                    bookmark.highlightRange.startLine += lineDelta;
+                                    bookmark.highlightRange.endLine += lineDelta;
+                                }
+                            } else if (bookmark.highlightRange) {
+                                bookmark.highlightRange.endLine += lineDelta;
+                            }
+                            bookmark.updatedAt = Date.now();
+                            this.bookmarks.set(bookmark.id, bookmark);
+                            hasChanged = true;
+                        }
+                    }
+                    // -----------------------------------------------------------------
+                    // CAS E : ÉDITION À L'INTÉRIEUR D'UNE PLAGE PLURI-LIGNES
                     // -----------------------------------------------------------------
                     else if (changeStartLine > startLine && changeStartLine <= endLine) {
-                        if (bookmark.highlightRange) {
+                        if (bookmark.highlightRange && lineDelta !== 0) {
                             bookmark.highlightRange.endLine += lineDelta;
+                            bookmark.updatedAt = Date.now();
+                            this.bookmarks.set(bookmark.id, bookmark);
+                            hasChanged = true;
                         }
-                        hasChanged = true;
                     }
 
-                    // Sécurités sur les bornes
+                    // Sécurités sur les bornes du HighlightRange
                     if (bookmark.highlightRange) {
                         if (bookmark.highlightRange.startLine < 0) { bookmark.highlightRange.startLine = 0; }
                         if (bookmark.highlightRange.endLine < bookmark.highlightRange.startLine) {
                             bookmark.highlightRange.endLine = bookmark.highlightRange.startLine;
                         }
-                    }
-
-                    if (hasChanged) {
-                        bookmark.updatedAt = Date.now();
-                        this.bookmarks.set(bookmark.id, bookmark);
                     }
                 }
             }
