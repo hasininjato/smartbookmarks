@@ -28,7 +28,7 @@
         {
           "id": "smartBookmarksView",
           "name": "Smart Bookmarks",
-          "icon": "${bookmark}"
+          "icon": "$(bookmark)"
         }
       ]
     },
@@ -62,6 +62,16 @@
         "command": "smartbookmarks.clearFileBookmarks",
         "title": "Smart Bookmark: Clear Bookmarks in Active File",
         "category": "Smart Bookmarks"
+      },
+      {
+        "command": "smartbookmarks.deleteSingleBookmark",
+        "title": "Delete this bookmark",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "smartbookmarks.deleteFileBookmarksFromTree",
+        "title": "Delete all bookmarks for this file",
+        "icon": "$(trash)"
       }
     ],
     "keybindings": [
@@ -105,6 +115,20 @@
           "description": "Automatically update bookmark positions when symbols are renamed/moved"
         }
       }
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "smartbookmarks.deleteSingleBookmark",
+          "when": "viewItem == bookmarkItem",
+          "group": "inline"
+        },
+        {
+          "command": "smartbookmarks.deleteFileBookmarksFromTree",
+          "when": "viewItem == fileItem",
+          "group": "inline"
+        }
+      ]
     }
   },
   "scripts": {

@@ -13,12 +13,12 @@ export class BookmarkTreeItem extends vscode.TreeItem {
         super(label, collapsibleState);
 
         if (bookmark) {
-            // Élément enfant : un Signet précis
+            // C'est un signet -> on lui donne le tag 'bookmarkItem'
+            this.contextValue = 'bookmarkItem';
             this.description = `Ligne ${bookmark.line}`;
             this.tooltip = `${bookmark.symbolName} - Ligne ${bookmark.line}`;
             this.iconPath = new vscode.ThemeIcon('bookmark');
 
-            // Commande pour sauter directement au signet au clic
             this.command = {
                 command: 'vscode.open',
                 title: 'Ouvrir le signet',
@@ -33,7 +33,8 @@ export class BookmarkTreeItem extends vscode.TreeItem {
                 ]
             };
         } else {
-            // Élément parent : un Fichier
+            // C'est un fichier parent -> on lui donne le tag 'fileItem'
+            this.contextValue = 'fileItem';
             this.iconPath = vscode.ThemeIcon.File;
             this.resourceUri = vscode.Uri.file(filePath || '');
         }

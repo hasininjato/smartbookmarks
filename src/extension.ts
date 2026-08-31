@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { BookmarkProvider } from './providers/bookmarkProvider';
 import { SymbolTracker } from './providers/symbolTracker';
 import { BookmarkDecorationProvider } from './providers/bookmarkDecorationProvider';
-import { BookmarkTreeViewProvider } from './providers/bookmarkTreeViewProvider';
+import { BookmarkTreeViewProvider, BookmarkTreeItem } from './providers/bookmarkTreeViewProvider';
 import { BookmarkStatusBarProvider } from './providers/bookmarkStatusBarProvider';
 import { AddBookmarkCommand } from './commands/addBookmarkCommand';
 import { NextBookmarkCommand } from './commands/nextBookmarkCommand';
@@ -37,7 +37,19 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(prevCommand.commandId, () => prevCommand.execute()),
     vscode.commands.registerCommand(listCommand.commandId, () => listCommand.execute()),
     vscode.commands.registerCommand(clearAllCommand.commandId, () => clearAllCommand.execute()),
-    vscode.commands.registerCommand(clearFileCommand.commandId, () => clearFileCommand.execute())
+    vscode.commands.registerCommand(clearFileCommand.commandId, () => clearFileCommand.execute()),
+
+    // --- NOUVELLES COMMANDES POUR LES CORBEILLES ---
+    vscode.commands.registerCommand('smartbookmarks.deleteSingleBookmark', (node: BookmarkTreeItem) => {
+      if (node?.bookmark) {
+        provider.delete(node.bookmark.id);
+      }
+    }),
+    vscode.commands.registerCommand('smartbookmarks.deleteFileBookmarksFromTree', (node: BookmarkTreeItem) => {
+      if (node?.filePath) {
+        provider.clearForFile(node.filePath);
+      }
+    })
   );
 
   const treeView = vscode.window.createTreeView('smartBookmarksView', {

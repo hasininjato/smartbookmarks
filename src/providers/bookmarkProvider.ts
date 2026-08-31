@@ -274,4 +274,13 @@ export class BookmarkProvider {
             this.bookmarks.set(b.id, b);
         }
     }
+
+    // Supprime un seul signet grâce à son ID
+    public delete(id: string): void {
+        if (this.bookmarks.has(id)) {
+            this.bookmarks.delete(id);
+            this.save();
+            this._onDidChangeBookmarks.fire();
+        }
+    }
 }
