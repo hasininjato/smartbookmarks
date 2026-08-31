@@ -36,19 +36,25 @@ export class ListBookmarksCommand {
         const quickPick = vscode.window.createQuickPick<BookmarkQuickPickItem>();
         quickPick.placeholder = 'Select a bookmark to navigate';
 
-        // Transformer les signets en éléments de liste avec bouton corbeille
-        quickPick.items = sortedBookmarks.map(b => ({
-            label: `📍 ${b.symbolName}`,
-            description: `line ${b.line}`,
-            detail: b.filePath,
-            bookmark: b,
-            buttons: [
-                {
-                    iconPath: new vscode.ThemeIcon('trash'),
-                    tooltip: 'Supprimer ce signet'
-                }
-            ]
-        }));
+        // Transformer les signets en éléments de liste
+        quickPick.items = sortedBookmarks.map(b => {
+            const author = b.author || 'Unknown';
+            const dateStr = b.createdDateFormatted
+                || (b.createdAt ? new Date(b.createdAt).toLocaleString('fr-FR') : 'Unknown date');
+
+            return {
+                label: `📍 ${b.symbolName}`,
+                description: `Line ${b.line} • by ${author}`, // Infos affichées à droite du nom
+                detail: `📅 ${dateStr} — 📁 ${b.filePath}`,   // Infos affichées sous la ligne
+                bookmark: b,
+                buttons: [
+                    {
+                        iconPath: new vscode.ThemeIcon('trash'),
+                        tooltip: 'Delete this bookmark'
+                    }
+                ]
+            };
+        });
 
         // 4. Clic sur la corbeille
         quickPick.onDidTriggerItemButton(async (e) => {

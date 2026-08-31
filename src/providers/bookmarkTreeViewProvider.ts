@@ -15,8 +15,20 @@ export class BookmarkTreeItem extends vscode.TreeItem {
         if (bookmark) {
             // C'est un signet -> on lui donne le tag 'bookmarkItem'
             this.contextValue = 'bookmarkItem';
-            this.description = `Ligne ${bookmark.line}`;
-            this.tooltip = `${bookmark.symbolName} - Ligne ${bookmark.line}`;
+
+            const author = bookmark.author || 'Unknown';
+            const dateStr = bookmark.createdDateFormatted
+                || (bookmark.createdAt ? new Date(bookmark.createdAt).toLocaleString('fr-FR') : 'Unknown date');
+
+            this.description = `Line ${bookmark.line}`;
+
+            // --- INFOBULLE ENRICHIE AU HOVER ---
+            const tooltipMarkdown = new vscode.MarkdownString();
+            tooltipMarkdown.appendMarkdown(`**📍 ${bookmark.symbolName}**\n\n`);
+            tooltipMarkdown.appendMarkdown(`- **Created by :** ${author}\n`);
+            tooltipMarkdown.appendMarkdown(`- **Date of creation :** ${dateStr}`);
+
+            this.tooltip = tooltipMarkdown;
             this.iconPath = new vscode.ThemeIcon('bookmark');
 
             this.command = {
@@ -46,7 +58,6 @@ export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<Bookmar
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     constructor(private provider: BookmarkProvider) {
-        // Rafraîchir la vue dès qu'un signet est ajouté, modifié ou supprimé
         this.provider.onDidChangeBookmarks(() => {
             this.refresh();
         });
