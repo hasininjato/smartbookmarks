@@ -38,16 +38,28 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(listCommand.commandId, () => listCommand.execute()),
     vscode.commands.registerCommand(clearAllCommand.commandId, () => clearAllCommand.execute()),
     vscode.commands.registerCommand(clearFileCommand.commandId, () => clearFileCommand.execute()),
-
-    // --- NOUVELLES COMMANDES POUR LES CORBEILLES ---
+    // commandes pour les corbeilles
     vscode.commands.registerCommand('smartbookmarks.deleteSingleBookmark', (node: BookmarkTreeItem) => {
       if (node?.bookmark) {
         provider.delete(node.bookmark.id);
       }
     }),
-    vscode.commands.registerCommand('smartbookmarks.deleteFileBookmarksFromTree', (node: BookmarkTreeItem) => {
+    // Corbeille sur la ligne d'un FICHIER avec popup de confirmation
+    vscode.commands.registerCommand('smartbookmarks.deleteFileBookmarksFromTree', async (node: BookmarkTreeItem) => {
       if (node?.filePath) {
-        provider.clearForFile(node.filePath);
+        // Récupère le nombre de signets pour le message
+        const count = provider.getBookmarks().filter(b => b.filePath === node.filePath).length;
+
+        // Do you want to 
+        const answer = await vscode.window.showWarningMessage(
+          `Are you sure you want to delete the ${count} bookmark(s) from this file?`,
+          { modal: true },
+          'Supprimer'
+        );
+
+        if (answer === 'Supprimer') {
+          provider.clearForFile(node.filePath);
+        }
       }
     })
   );
