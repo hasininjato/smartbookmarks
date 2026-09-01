@@ -13,42 +13,62 @@ export class BookmarkTreeItem extends vscode.TreeItem {
         super(label, collapsibleState);
 
         if (bookmark) {
-            // C'est un signet -> on lui donne le tag 'bookmarkItem'
             this.contextValue = 'bookmarkItem';
 
-            // --- AFFICHER LE COMMENTAIRE DANS LE LABEL ---
-            if (bookmark.comment) {
-                this.label = `${bookmark.symbolName} — 💬 "${bookmark.comment}"`;
-            }
+            // Construction du libellé dans la vue arborescente
+            const tagStr = bookmark.tag ? `[${bookmark.tag}] ` : '';
+            const titleStr = bookmark.title ? bookmark.title : bookmark.symbolName;
+
+            // Si la note comporte plusieurs lignes, on n'affiche que la première dans l'arbre
+            const firstLineComment = bookmark.comment ? bookmark.comment.split('\n')[0] : '';
+            const noteStr = firstLineComment ? ` — 💬 "${firstLineComment}..."` : '';
+
+            this.label = `${tagStr}${titleStr}${noteStr}`;
 
             const author = bookmark.author || 'Unknown';
             const dateStr = bookmark.createdDateFormatted
                 || (bookmark.createdAt ? new Date(bookmark.createdAt).toLocaleString('fr-FR') : 'Unknown date');
 
-            // --- GESTION DU RANGE VS LIGNE UNIQUE ---
             const hasRange = bookmark.highlightRange && bookmark.highlightRange.startLine !== bookmark.highlightRange.endLine;
 
             this.description = hasRange
                 ? `Lines ${bookmark.highlightRange!.startLine + 1} → ${bookmark.highlightRange!.endLine + 1}`
                 : `Line ${bookmark.line}`;
 
-            // --- INFOBULLE ENRICHIE (HOVER) ---
+            // Construction du survol (Hover) avec centrage HTML et gestion multi-lignes
             const tooltipMarkdown = new vscode.MarkdownString();
-            tooltipMarkdown.appendMarkdown(`**📍 ${bookmark.symbolName}**\n\n`);
+            tooltipMarkdown.isTrusted = true;
+            tooltipMarkdown.supportHtml = true;
+
+            let htmlContent = `<div align="center">\n\n`;
+
+            if (bookmark.tag) {
+                htmlContent += `### ${bookmark.tag}\n`;
+            }
+            if (bookmark.title) {
+                htmlContent += `**${bookmark.title}**\n\n`;
+            }
+
+            htmlContent += `📍 *${bookmark.symbolName}*\n\n`;
 
             if (bookmark.comment) {
-                tooltipMarkdown.appendMarkdown(`- **Note :** *${bookmark.comment}*\n`);
+                // Conversion des retour à la ligne pour l'affichage HTML dans le tooltip
+                const formattedComment = bookmark.comment.replace(/\n/g, '<br/>');
+                htmlContent += `💬 <i>"${formattedComment}"</i><br/><br/>`;
             }
 
-            tooltipMarkdown.appendMarkdown(`- **Created by :** ${author}\n`);
-            tooltipMarkdown.appendMarkdown(`- **Date of creation :** ${dateStr}\n`);
+            htmlContent += `---\n\n`;
+            htmlContent += `👤 **Auteur :** ${author} &nbsp;|&nbsp; 📅 **Date :** ${dateStr}\n\n`;
 
             if (hasRange) {
-                tooltipMarkdown.appendMarkdown(`- **Range :** Lines ${bookmark.highlightRange!.startLine + 1} to ${bookmark.highlightRange!.endLine + 1}`);
+                htmlContent += `📏 **Lignes :** ${bookmark.highlightRange!.startLine + 1} à ${bookmark.highlightRange!.endLine + 1}\n`;
             } else {
-                tooltipMarkdown.appendMarkdown(`- **Line :** ${bookmark.line}`);
+                htmlContent += `📍 **Ligne :** ${bookmark.line}\n`;
             }
 
+            htmlContent += `\n</div>`;
+
+            tooltipMarkdown.appendMarkdown(htmlContent);
             this.tooltip = tooltipMarkdown;
             this.iconPath = new vscode.ThemeIcon(hasRange ? 'selection' : 'bookmark');
 
@@ -61,12 +81,14 @@ export class BookmarkTreeItem extends vscode.TreeItem {
                         selection: new vscode.Range(
                             bookmark.line - 1, 0,
                             bookmark.line - 1, 0
-                        )
+                        ),
+                        preserveFocus: false,
+                        preview: false,
+                        viewColumn: vscode.ViewColumn.Active
                     }
                 ]
             };
         } else {
-            // C'est un fichier parent -> on lui donne le tag 'fileItem'
             this.contextValue = 'fileItem';
             this.iconPath = vscode.ThemeIcon.File;
             this.resourceUri = vscode.Uri.file(filePath || '');
@@ -99,7 +121,6 @@ export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<Bookmar
             return [];
         }
 
-        // 1. Racine de l'arbre : Grouper les signets par Fichier
         if (!element) {
             const filePaths = Array.from(new Set(allBookmarks.map(b => b.filePath)));
 
@@ -118,7 +139,6 @@ export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<Bookmar
             });
         }
 
-        // 2. Enfants : Signets appartenant au fichier sélectionné
         if (element.filePath) {
             const fileBookmarks = allBookmarks
                 .filter(b => b.filePath === element.filePath)

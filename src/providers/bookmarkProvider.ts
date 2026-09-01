@@ -196,7 +196,9 @@ export class BookmarkProvider {
         filePath: string,
         cursorLine: number,
         highlightRange?: { startLine: number; endLine: number },
-        comment?: string
+        comment?: string,
+        tag?: string,   // <-- Nouveau
+        title?: string  // <-- Nouveau
     ): Bookmark | null {
         const line = cursorLine + 1;
 
@@ -232,7 +234,9 @@ export class BookmarkProvider {
             author: user.name,
             createdDateFormatted: formattedDate,
             highlightRange,
-            comment: comment?.trim() || undefined
+            comment: comment?.trim() || undefined,
+            tag: tag || undefined,
+            title: title?.trim() || undefined
         };
 
         this.bookmarks.set(id, bookmark);

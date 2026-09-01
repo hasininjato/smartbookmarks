@@ -124,6 +124,62 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically update bookmark positions when symbols are renamed/moved"
+        },
+        "smartbookmarks.tags": {
+          "type": "array",
+          "description": "Liste des tags disponibles pour les signets",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "description": "Nom du tag (ex: FIXME)"
+              },
+              "icon": {
+                "type": "string",
+                "description": "Identifiant de l'icône VS Code Codex (ex: alert, bug, bookmark) ou un emoji"
+              },
+              "description": {
+                "type": "string",
+                "description": "Courte description explicative"
+              }
+            },
+            "required": [
+              "label"
+            ]
+          },
+          "default": [
+            {
+              "label": "NOTE",
+              "icon": "notebook",
+              "description": "Remarque ou note d'information"
+            },
+            {
+              "label": "FIXME",
+              "icon": "tools",
+              "description": "Code à corriger ou refactoriser"
+            },
+            {
+              "label": "TODO",
+              "icon": "checklist",
+              "description": "Tâche restant à faire"
+            },
+            {
+              "label": "BUG",
+              "icon": "bug",
+              "description": "Problème ou dysfonctionnement"
+            },
+            {
+              "label": "REVIEW",
+              "icon": "eye",
+              "description": "Nécessite une revue de code"
+            },
+            {
+              "label": "OPTIM",
+              "icon": "zap",
+              "description": "Amélioration de performance"
+            }
+          ]
         }
       }
     },

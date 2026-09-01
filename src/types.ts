@@ -16,6 +16,8 @@ export interface Bookmark {
     createdDateFormatted?: string;
     author?: string;
     comment?: string;
+    tag?: string;
+    title?: string;
 }
 
 export interface SymbolInfo {
@@ -28,4 +30,10 @@ export interface SymbolInfo {
 export interface BookmarkGroup {
     symbolName: string;
     bookmarks: Bookmark[];
+}
+
+export interface BookmarkTagConfig {
+    label: string;
+    icon?: string; // Ex: 'bug', 'tools', ou un emoji '🐛'
+    description?: string;
 }

@@ -14,12 +14,12 @@ export class ListBookmarksCommand {
     async execute(): Promise<void> {
         const activeEditor = vscode.window.activeTextEditor;
 
-        // 1. Chercher d'abord les signets du fichier actif
+        // 1. Chercher les signets du fichier actif
         let bookmarks = activeEditor
             ? this.provider.getForFile(activeEditor.document.uri.fsPath)
             : [];
 
-        // 2. Si le fichier actif n'a pas de signet (ou pas d'éditeur), charger TOUS les signets
+        // 2. Fallback sur TOUS les signets si vide
         if (bookmarks.length === 0) {
             bookmarks = this.provider.getBookmarks();
         }
@@ -42,17 +42,18 @@ export class ListBookmarksCommand {
             const dateStr = b.createdDateFormatted
                 || (b.createdAt ? new Date(b.createdAt).toLocaleString('fr-FR') : 'Unknown date');
 
-            // Plage de surlignement ou ligne simple
             const hasRange = b.highlightRange && b.highlightRange.startLine !== b.highlightRange.endLine;
             const lineStr = hasRange
                 ? `Lines ${b.highlightRange!.startLine + 1} → ${b.highlightRange!.endLine + 1}`
                 : `Line ${b.line}`;
 
-            // Formatage du commentaire s'il est présent
+            // Formatage avec Tag, Titre et Note
+            const tagStr = b.tag ? `[${b.tag}] ` : '';
+            const titleStr = b.title ? `${b.title} (${b.symbolName})` : b.symbolName;
             const commentStr = b.comment ? ` — 💬 "${b.comment}"` : '';
 
             return {
-                label: `${hasRange ? '📑' : '📍'} ${b.symbolName}${commentStr}`,
+                label: `${hasRange ? '📑' : '📍'} ${tagStr}${titleStr}${commentStr}`,
                 description: `${lineStr} • by ${author}`,
                 detail: `📅 ${dateStr} — 📁 ${b.filePath}`,
                 bookmark: b,
@@ -70,10 +71,8 @@ export class ListBookmarksCommand {
             const item = e.item;
             this.provider.delete(item.bookmark.id);
 
-            // Met à jour la liste en direct sans fermer le menu
             quickPick.items = quickPick.items.filter(i => i.bookmark.id !== item.bookmark.id);
 
-            // Si plus aucun signet dans la liste, on ferme le QuickPick
             if (quickPick.items.length === 0) {
                 quickPick.hide();
             }
