@@ -3,6 +3,8 @@ import { Bookmark, SymbolInfo } from '../types';
 import { Storage } from '../storage/storage';
 import * as os from 'os';
 import { getGitUser } from '../utils/gitUser';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export class BookmarkProvider {
     private bookmarks: Map<string, Bookmark> = new Map();
@@ -13,6 +15,7 @@ export class BookmarkProvider {
     constructor(context: vscode.ExtensionContext) {
         this.storage = new Storage(context);
         this.load();
+        this.cleanOrphanBookmarks(); // <-- Nettoyage à froid des orphelins au démarrage
         this.setupListeners();
     }
 
@@ -41,7 +44,7 @@ export class BookmarkProvider {
                     const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
 
                     // -----------------------------------------------------------------
-                    // CAS A : Suppression STRICTEMENT AVANT la ligne du signet (ex: lignes 1 à 10)
+                    // CAS A : Suppression STRICTEMENT AVANT la ligne du signet
                     // -----------------------------------------------------------------
                     if (changeEndLine < startLine) {
                         if (lineDelta !== 0) {
@@ -61,11 +64,10 @@ export class BookmarkProvider {
                         }
                     }
                     // -----------------------------------------------------------------
-                    // CAS B : Remontée du code (Shift+Haut depuis l.40 col 0 vers l.37 + Backspace)
-                    // La suppression démarre au-dessus du signet et s'arrête sur/juste avant sa ligne.
+                    // CAS B : Remontée du code (Shift+Haut + Backspace)
                     // -----------------------------------------------------------------
                     else if (changeStartLine < startLine && changeEndLine <= startLine) {
-                        const targetLine = changeStartLine + 1; // 1-based (ex: 37)
+                        const targetLine = changeStartLine + 1; // 1-based index
                         const diff = targetLine - bookmark.line;
 
                         bookmark.line = targetLine;
@@ -82,7 +84,7 @@ export class BookmarkProvider {
                         hasChanged = true;
                     }
                     // -----------------------------------------------------------------
-                    // CAS C : SUPPRESSION DU SIGNET (La sélection s'étend au-delà du signet)
+                    // CAS C : SUPPRESSION DU SIGNET
                     // -----------------------------------------------------------------
                     else if (
                         (changeStartLine <= startLine && changeEndLine > endLine) ||
@@ -167,18 +169,21 @@ export class BookmarkProvider {
             }
         });
 
-        // 3. Suppression de fichiers
+        // 3. Suppression de fichiers OU DOSSIERS
         vscode.workspace.onDidDeleteFiles((event) => {
             let hasChanged = false;
+
             for (const uri of event.files) {
-                const path = uri.fsPath;
+                const deletedPath = uri.fsPath;
                 for (const [id, bookmark] of this.bookmarks) {
-                    if (bookmark.filePath === path) {
+                    // Supprime si c'est le fichier exact OU si le fichier était DANS le dossier supprimé
+                    if (bookmark.filePath === deletedPath || bookmark.filePath.startsWith(deletedPath + path.sep)) {
                         this.bookmarks.delete(id);
                         hasChanged = true;
                     }
                 }
             }
+
             if (hasChanged) {
                 this.save();
                 this._onDidChangeBookmarks.fire();
@@ -212,7 +217,6 @@ export class BookmarkProvider {
             timeStyle: 'short'
         });
 
-        // --- APPEL DE LA FONCTION DÉDIÉE ---
         const user = getGitUser(filePath);
 
         const bookmark: Bookmark = {
@@ -224,8 +228,8 @@ export class BookmarkProvider {
             line: line,
             createdAt: now,
             updatedAt: now,
-            author: user.name,                   // Ex: "Jean Dupont" ou "jdupont"
-            createdDateFormatted: formattedDate, // Ex: "31/08/2026 14:30"
+            author: user.name,
+            createdDateFormatted: formattedDate,
             highlightRange
         };
 
@@ -315,10 +319,28 @@ export class BookmarkProvider {
         }
     }
 
-    // Supprime un seul signet grâce à son ID
     public delete(id: string): void {
         if (this.bookmarks.has(id)) {
             this.bookmarks.delete(id);
+            this.save();
+            this._onDidChangeBookmarks.fire();
+        }
+    }
+
+    /**
+     * Nettoie les signets dont le fichier n'existe plus du tout sur le disque.
+     */
+    public cleanOrphanBookmarks(): void {
+        let hasChanged = false;
+
+        for (const [id, bookmark] of this.bookmarks) {
+            if (!fs.existsSync(bookmark.filePath)) {
+                this.bookmarks.delete(id);
+                hasChanged = true;
+            }
+        }
+
+        if (hasChanged) {
             this.save();
             this._onDidChangeBookmarks.fire();
         }
