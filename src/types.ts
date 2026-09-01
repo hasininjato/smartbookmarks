@@ -15,13 +15,14 @@ export interface Bookmark {
     };
     createdDateFormatted?: string;
     author?: string;
+    comment?: string;
 }
 
 export interface SymbolInfo {
     name: string;
     kind: vscode.SymbolKind;
-    range: vscode.Range;
-    selectionRange: vscode.Range;
+    range?: vscode.Range;
+    selectionRange?: vscode.Range;
 }
 
 export interface BookmarkGroup {

@@ -72,6 +72,11 @@
         "command": "smartbookmarks.deleteFileBookmarksFromTree",
         "title": "Delete all bookmarks for this file",
         "icon": "$(trash)"
+      },
+      {
+        "command": "smartbookmarks.addBookmarkWithComment",
+        "title": "Smart Bookmark: Add bookmark with notes",
+        "category": "Smart Bookmarks"
       }
     ],
     "keybindings": [
@@ -99,6 +104,12 @@
         "command": "smartbookmarks.clearAllBookmarks",
         "key": "ctrl+alt+c",
         "mac": "cmd+alt+c"
+      },
+      {
+        "command": "smartbookmarks.addBookmarkWithComment",
+        "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
+        "when": "editorTextFocus"
       }
     ],
     "configuration": {

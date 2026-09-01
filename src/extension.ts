@@ -10,6 +10,7 @@ import { PreviousBookmarkCommand } from './commands/previousBookmarkCommand';
 import { ListBookmarksCommand } from './commands/listBookmarksCommand';
 import { ClearAllBookmarksCommand } from './commands/clearAllBookmarksCommand';
 import { ClearFileBookmarksCommand } from './commands/clearFileBookmarksCommand';
+import { AddBookmarkWithCommentCommand } from './commands/addBookmarkWithCommentCommand';
 
 let provider: BookmarkProvider;
 let tracker: SymbolTracker;
@@ -30,6 +31,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const listCommand = new ListBookmarksCommand(provider);
   const clearAllCommand = new ClearAllBookmarksCommand(provider);
   const clearFileCommand = new ClearFileBookmarksCommand(provider);
+  const addBookmarkWithCommentCmd = new AddBookmarkWithCommentCommand(provider);
 
   context.subscriptions.push(
     vscode.commands.registerCommand(addCommand.commandId, () => addCommand.execute()),
@@ -38,6 +40,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(listCommand.commandId, () => listCommand.execute()),
     vscode.commands.registerCommand(clearAllCommand.commandId, () => clearAllCommand.execute()),
     vscode.commands.registerCommand(clearFileCommand.commandId, () => clearFileCommand.execute()),
+    vscode.commands.registerCommand(addBookmarkWithCommentCmd.commandId, () => addBookmarkWithCommentCmd.execute()),
     // commandes pour les corbeilles
     vscode.commands.registerCommand('smartbookmarks.deleteSingleBookmark', (node: BookmarkTreeItem) => {
       if (node?.bookmark) {
@@ -50,7 +53,6 @@ export function activate(context: vscode.ExtensionContext): void {
         // Récupère le nombre de signets pour le message
         const count = provider.getBookmarks().filter(b => b.filePath === node.filePath).length;
 
-        // Do you want to 
         const answer = await vscode.window.showWarningMessage(
           `Are you sure you want to delete the ${count} bookmark(s) from this file?`,
           { modal: true },

@@ -42,10 +42,19 @@ export class ListBookmarksCommand {
             const dateStr = b.createdDateFormatted
                 || (b.createdAt ? new Date(b.createdAt).toLocaleString('fr-FR') : 'Unknown date');
 
+            // Plage de surlignement ou ligne simple
+            const hasRange = b.highlightRange && b.highlightRange.startLine !== b.highlightRange.endLine;
+            const lineStr = hasRange
+                ? `Lines ${b.highlightRange!.startLine + 1} → ${b.highlightRange!.endLine + 1}`
+                : `Line ${b.line}`;
+
+            // Formatage du commentaire s'il est présent
+            const commentStr = b.comment ? ` — 💬 "${b.comment}"` : '';
+
             return {
-                label: `📍 ${b.symbolName}`,
-                description: `Line ${b.line} • by ${author}`, // Infos affichées à droite du nom
-                detail: `📅 ${dateStr} — 📁 ${b.filePath}`,   // Infos affichées sous la ligne
+                label: `${hasRange ? '📑' : '📍'} ${b.symbolName}${commentStr}`,
+                description: `${lineStr} • by ${author}`,
+                detail: `📅 ${dateStr} — 📁 ${b.filePath}`,
                 bookmark: b,
                 buttons: [
                     {

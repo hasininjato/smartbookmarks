@@ -16,20 +16,41 @@ export class BookmarkTreeItem extends vscode.TreeItem {
             // C'est un signet -> on lui donne le tag 'bookmarkItem'
             this.contextValue = 'bookmarkItem';
 
+            // --- AFFICHER LE COMMENTAIRE DANS LE LABEL ---
+            if (bookmark.comment) {
+                this.label = `${bookmark.symbolName} — 💬 "${bookmark.comment}"`;
+            }
+
             const author = bookmark.author || 'Unknown';
             const dateStr = bookmark.createdDateFormatted
                 || (bookmark.createdAt ? new Date(bookmark.createdAt).toLocaleString('fr-FR') : 'Unknown date');
 
-            this.description = `Line ${bookmark.line}`;
+            // --- GESTION DU RANGE VS LIGNE UNIQUE ---
+            const hasRange = bookmark.highlightRange && bookmark.highlightRange.startLine !== bookmark.highlightRange.endLine;
 
-            // --- INFOBULLE ENRICHIE AU HOVER ---
+            this.description = hasRange
+                ? `Lines ${bookmark.highlightRange!.startLine + 1} → ${bookmark.highlightRange!.endLine + 1}`
+                : `Line ${bookmark.line}`;
+
+            // --- INFOBULLE ENRICHIE (HOVER) ---
             const tooltipMarkdown = new vscode.MarkdownString();
             tooltipMarkdown.appendMarkdown(`**📍 ${bookmark.symbolName}**\n\n`);
+
+            if (bookmark.comment) {
+                tooltipMarkdown.appendMarkdown(`- **Note :** *${bookmark.comment}*\n`);
+            }
+
             tooltipMarkdown.appendMarkdown(`- **Created by :** ${author}\n`);
-            tooltipMarkdown.appendMarkdown(`- **Date of creation :** ${dateStr}`);
+            tooltipMarkdown.appendMarkdown(`- **Date of creation :** ${dateStr}\n`);
+
+            if (hasRange) {
+                tooltipMarkdown.appendMarkdown(`- **Range :** Lines ${bookmark.highlightRange!.startLine + 1} to ${bookmark.highlightRange!.endLine + 1}`);
+            } else {
+                tooltipMarkdown.appendMarkdown(`- **Line :** ${bookmark.line}`);
+            }
 
             this.tooltip = tooltipMarkdown;
-            this.iconPath = new vscode.ThemeIcon('bookmark');
+            this.iconPath = new vscode.ThemeIcon(hasRange ? 'selection' : 'bookmark');
 
             this.command = {
                 command: 'vscode.open',
