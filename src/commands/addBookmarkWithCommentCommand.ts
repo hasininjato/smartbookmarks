@@ -3,7 +3,6 @@ import { BookmarkProvider } from '../providers/bookmarkProvider';
 import { BookmarkTagConfig, SymbolInfo } from '../types';
 import { getSymbolAtPosition } from '../utils/symbols';
 
-// Palette d'icônes prédéfinies avec prévisualisation directe
 const PRESET_ICONS = [
     { label: '$(bug) bug', description: 'Dysfonctionnement / Bug' },
     { label: '$(tools) tools', description: 'Outillage / Refactoring' },
@@ -31,7 +30,37 @@ export class AddBookmarkWithCommentCommand {
             return;
         }
 
-        // 1. Récupération des tags enregistrés
+        const document = editor.document;
+        const filePath = document.uri.fsPath;
+        const selection = editor.selection;
+        const startLine = selection.start.line;
+        const endLine = selection.end.line;
+
+        // Récupération identique au mode automatique
+        const detectedSymbol = await getSymbolAtPosition(document, selection.start);
+        const lineRange = new vscode.Range(startLine, 0, startLine, 0);
+
+        const symbol: SymbolInfo = detectedSymbol ? {
+            name: `${detectedSymbol.name} (Ligne ${startLine + 1})`,
+            kind: detectedSymbol.kind,
+            range: lineRange,
+            selectionRange: lineRange
+        } : {
+            name: `Ligne ${startLine + 1}`,
+            kind: vscode.SymbolKind.Null,
+            range: lineRange,
+            selectionRange: lineRange
+        };
+
+        let highlightRange: { startLine: number; endLine: number } | undefined = undefined;
+        if (endLine > startLine) {
+            highlightRange = {
+                startLine: startLine,
+                endLine: endLine
+            };
+        }
+
+        // 1. Sélection/Création de Tag
         const config = vscode.workspace.getConfiguration('smartbookmarks');
         let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
 
@@ -53,11 +82,10 @@ export class AddBookmarkWithCommentCommand {
             ignoreFocusOut: true
         });
 
-        if (!selectedTagItem) { return; };
+        if (!selectedTagItem) { return; }
 
-        let selectedTagLabel = '';
+        let selectedTagLabel: string | undefined = undefined;
 
-        // 2. Création d'un nouveau Tag avec sélection d'icône visuelle
         if (selectedTagItem.label.includes('Créer un nouveau tag...')) {
             const newTagName = await vscode.window.showInputBox({
                 prompt: 'Nom du nouveau tag (ex: SECURITY, OPTIM, REFAC)',
@@ -65,7 +93,7 @@ export class AddBookmarkWithCommentCommand {
                 ignoreFocusOut: true
             });
 
-            if (!newTagName) { return; };
+            if (!newTagName || newTagName.trim() === '') { return; }
 
             const iconChoice = await vscode.window.showQuickPick(PRESET_ICONS, {
                 placeHolder: 'Choisissez une icône dans la liste visuelle',
@@ -92,54 +120,34 @@ export class AddBookmarkWithCommentCommand {
             await config.update('tags', userTags, vscode.ConfigurationTarget.Global);
 
             selectedTagLabel = newTagObj.label;
-            vscode.window.showInformationMessage(`Tag "${newTagObj.label}" enregistré avec l'icône "${selectedIcon}" !`);
         } else {
-            selectedTagLabel = selectedTagItem.label.replace(/^\$\(.*?\)\s*/, '').trim();
+            const cleanedLabel = selectedTagItem.label.replace(/^\$\(.*?\)\s*/, '').trim();
+            selectedTagLabel = cleanedLabel.length > 0 ? cleanedLabel : undefined;
         }
 
-        // 3. Titre du signet
-        const title = await vscode.window.showInputBox({
+        // 2. Saisie du titre
+        const rawTitle = await vscode.window.showInputBox({
             prompt: 'Entrez un titre pour ce signet',
             placeHolder: 'Ex: Vérification des droits d\'accès',
             ignoreFocusOut: true
         });
 
-        if (title === undefined) { return; };
+        if (rawTitle === undefined) { return; }
+        const cleanTitle = rawTitle.trim().length > 0 ? rawTitle.trim() : undefined;
 
-        // 4. Saisie multi-lignes interactive pour le commentaire
-        const comment = await this.askMultilineComment();
-        if (comment === undefined) { return; };
+        // 3. Saisie du commentaire
+        const rawComment = await this.askMultilineComment();
+        const cleanComment = rawComment && rawComment.trim().length > 0 ? rawComment.trim() : undefined;
 
-        // 5. Récupération des données du code et création du signet
-        const document = editor.document;
-        const selection = editor.selection;
-        const cursorLine = selection.active.line;
-
-        let highlightRange: { startLine: number; endLine: number } | undefined = undefined;
-        if (!selection.isEmpty && selection.start.line !== selection.end.line) {
-            highlightRange = {
-                startLine: selection.start.line,
-                endLine: selection.end.line
-            };
-        }
-
-        const detectedSymbol = await getSymbolAtPosition(document, selection.active);
-        const lineRange = new vscode.Range(cursorLine, 0, cursorLine, 0);
-        const symbol: SymbolInfo = detectedSymbol ?? {
-            name: `Ligne ${cursorLine + 1}`,
-            kind: vscode.SymbolKind.File,
-            range: lineRange,
-            selectionRange: lineRange
-        };
-
+        // 4. Appel de toggle avec l'ordre EXACT attendu par BookmarkProvider
         this.provider.toggle(
-            symbol,
-            document.uri.fsPath,
-            cursorLine,
-            highlightRange,
-            comment,
-            selectedTagLabel,
-            title
+            symbol,          // 1. symbol
+            filePath,        // 2. filePath
+            startLine,       // 3. cursorLine
+            highlightRange,  // 4. highlightRange (identique au mode auto)
+            cleanComment,    // 5. comment
+            selectedTagLabel,// 6. tag
+            cleanTitle       // 7. title
         );
     }
 
@@ -183,6 +191,6 @@ export class AddBookmarkWithCommentCommand {
             }
         }
 
-        return lines.join('\n');
+        return lines.length > 0 ? lines.join('\n') : undefined;
     }
 }
