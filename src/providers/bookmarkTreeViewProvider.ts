@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { BookmarkProvider } from './bookmarkProvider';
-import { Bookmark } from '../types';
+import { Bookmark, BookmarkTagConfig } from '../types';
 
 export class BookmarkTreeItem extends vscode.TreeItem {
     constructor(
@@ -16,10 +16,10 @@ export class BookmarkTreeItem extends vscode.TreeItem {
             this.contextValue = 'bookmarkItem';
 
             // Construction du libellé dans la vue arborescente
-            const tagStr = bookmark.tag ? `[${bookmark.tag}] ` : '';
+            const tagStr = bookmark.tag ? `[${bookmark.tag.toUpperCase()}] ` : '';
             const titleStr = bookmark.title ? bookmark.title : bookmark.symbolName;
 
-            // Si la note comporte plusieurs lignes, on n'affiche que la première dans l'arbre
+            // Première ligne du commentaire pour l'affichage concis
             const firstLineComment = bookmark.comment ? bookmark.comment.split('\n')[0] : '';
             const noteStr = firstLineComment ? ` — 💬 "${firstLineComment}..."` : '';
 
@@ -35,42 +35,65 @@ export class BookmarkTreeItem extends vscode.TreeItem {
                 ? `Lines ${bookmark.highlightRange!.startLine + 1} → ${bookmark.highlightRange!.endLine + 1}`
                 : `Line ${bookmark.line}`;
 
-            // Construction du survol (Hover) avec centrage HTML et gestion multi-lignes
+            // Récupération de la configuration du tag s'il existe
+            const config = vscode.workspace.getConfiguration('smartbookmarks');
+            const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
+            const tagConfig = bookmark.tag
+                ? userTags.find(t => t.label.toUpperCase() === bookmark.tag!.toUpperCase())
+                : undefined;
+
+            const rawIcon = tagConfig?.icon || 'bookmark';
+            const cleanIconName = rawIcon.replace(/^\$\((.*?)\).*/, '$1');
+
+            // --- Construction du Tooltip (Hover) ---
             const tooltipMarkdown = new vscode.MarkdownString();
             tooltipMarkdown.isTrusted = true;
             tooltipMarkdown.supportHtml = true;
+            tooltipMarkdown.supportThemeIcons = true;
 
-            let htmlContent = `<div align="center">\n\n`;
-
-            if (bookmark.tag) {
-                htmlContent += `### ${bookmark.tag}\n`;
+            // Ligne 1 : Si un tag existe, on l'affiche avec son icône. Sinon, SEULEMENT le nom du symbole.
+            let htmlContent = '';
+            if (bookmark.tag && bookmark.tag.trim().length > 0) {
+                htmlContent = `$(${cleanIconName}) **${bookmark.tag.toUpperCase()}** — *${bookmark.symbolName}*\n\n`;
+            } else {
+                htmlContent = `*${bookmark.symbolName}*\n\n`;
             }
+
+            // Séparateur 1
+            htmlContent += `---\n\n`;
+
+            // Section 2 : Titre et Commentaire
+            let hasContentSection = false;
             if (bookmark.title) {
                 htmlContent += `**${bookmark.title}**\n\n`;
+                hasContentSection = true;
             }
-
-            htmlContent += `📍 *${bookmark.symbolName}*\n\n`;
 
             if (bookmark.comment) {
-                // Conversion des retour à la ligne pour l'affichage HTML dans le tooltip
                 const formattedComment = bookmark.comment.replace(/\n/g, '<br/>');
-                htmlContent += `💬 <i>"${formattedComment}"</i><br/><br/>`;
+                htmlContent += `💬 <i>"${formattedComment}"</i>\n\n`;
+                hasContentSection = true;
             }
 
-            htmlContent += `---\n\n`;
+            // Séparateur 2 (seulement si titre ou commentaire présent)
+            if (hasContentSection) {
+                htmlContent += `---\n\n`;
+            }
+
+            // Section 3 : Auteur, Date et Lignes
             htmlContent += `👤 **Auteur :** ${author} &nbsp;|&nbsp; 📅 **Date :** ${dateStr}\n\n`;
 
             if (hasRange) {
-                htmlContent += `📏 **Lignes :** ${bookmark.highlightRange!.startLine + 1} à ${bookmark.highlightRange!.endLine + 1}\n`;
+                htmlContent += `📏 **Lignes :** ${bookmark.highlightRange!.startLine + 1} à ${bookmark.highlightRange!.endLine + 1}`;
             } else {
-                htmlContent += `📍 **Ligne :** ${bookmark.line}\n`;
+                htmlContent += `📍 **Ligne :** ${bookmark.line}`;
             }
-
-            htmlContent += `\n</div>`;
 
             tooltipMarkdown.appendMarkdown(htmlContent);
             this.tooltip = tooltipMarkdown;
-            this.iconPath = new vscode.ThemeIcon(hasRange ? 'selection' : 'bookmark');
+
+            // Définition de l'icône affichée dans l'arbre
+            this.iconPath = new vscode.ThemeIcon(cleanIconName);
 
             this.command = {
                 command: 'vscode.open',
