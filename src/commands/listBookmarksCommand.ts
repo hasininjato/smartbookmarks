@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { BookmarkProvider } from '../providers/bookmarkProvider';
-import { Bookmark } from '../types';
+import { Bookmark, BookmarkTagConfig } from '../types';
 
 interface BookmarkQuickPickItem extends vscode.QuickPickItem {
     bookmark: Bookmark;
@@ -29,6 +29,10 @@ export class ListBookmarksCommand {
             return;
         }
 
+        // Récupération des tags configurés pour résoudre les icônes
+        const config = vscode.workspace.getConfiguration('smartbookmarks');
+        const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
+
         // Trier les signets par ligne
         const sortedBookmarks = [...bookmarks].sort((a, b) => a.line - b.line);
 
@@ -42,20 +46,32 @@ export class ListBookmarksCommand {
             const dateStr = b.createdDateFormatted
                 || (b.createdAt ? new Date(b.createdAt).toLocaleString('fr-FR') : 'Unknown date');
 
-            const hasRange = b.highlightRange && b.highlightRange.startLine !== b.highlightRange.endLine;
-            const lineStr = hasRange
-                ? `Lines ${b.highlightRange!.startLine + 1} → ${b.highlightRange!.endLine + 1}`
-                : `Line ${b.line}`;
+            // Récupération de l'icône associée au tag
+            let tagStr = '';
+            if (b.tag && b.tag.trim().length > 0) {
+                const formattedTag = b.tag.toUpperCase();
+                const tagConfig = userTags.find(t => t.label.toUpperCase() === formattedTag);
+                const rawIcon = tagConfig?.icon || 'tag';
+                const cleanIconName = rawIcon.replace(/^\$\((.*?)\).*/, '$1');
 
-            // Formatage avec Tag, Titre et Note
-            const tagStr = b.tag ? `[${b.tag}] ` : '';
-            const titleStr = b.title ? `${b.title} (${b.symbolName})` : b.symbolName;
-            const commentStr = b.comment ? ` — 💬 "${b.comment}"` : '';
+                tagStr = `$(${cleanIconName}) [${formattedTag}] `;
+            }
+
+            // Construction du bloc Titre et Note / Commentaire pour la zone de détails
+            let detailParts: string[] = [];
+            if (b.title) {
+                detailParts.push(`📌 ${b.title}`);
+            }
+            if (b.comment) {
+                detailParts.push(`💬 ${b.comment}`);
+            }
+
+            const detailStr = detailParts.length > 0 ? detailParts.join(' — ') : undefined;
 
             return {
-                label: `${hasRange ? '📑' : '📍'} ${tagStr}${titleStr}${commentStr}`,
-                description: `${lineStr} • by ${author}`,
-                detail: `📅 ${dateStr} — 📁 ${b.filePath}`,
+                label: `${tagStr}${b.symbolName}`,
+                description: `👤 ${author}`,
+                detail: detailStr ? `${detailStr}  |  📅 ${dateStr}` : `📅 ${dateStr}`,
                 bookmark: b,
                 buttons: [
                     {

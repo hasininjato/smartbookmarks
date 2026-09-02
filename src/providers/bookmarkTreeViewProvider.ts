@@ -16,7 +16,7 @@ export class BookmarkTreeItem extends vscode.TreeItem {
             this.contextValue = 'bookmarkItem';
 
             // Construction du libellé dans la vue arborescente
-            const tagStr = bookmark.tag ? `[${bookmark.tag.toUpperCase()}] ` : '';
+            const tagStr = bookmark.tag ? `${bookmark.tag.toUpperCase()} ` : '';
             const titleStr = bookmark.title ? bookmark.title : bookmark.symbolName;
 
             // Première ligne du commentaire pour l'affichage concis
