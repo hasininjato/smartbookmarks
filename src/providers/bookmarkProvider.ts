@@ -36,17 +36,66 @@ export class BookmarkProvider {
                 const linesRemoved = change.range.end.line - change.range.start.line;
                 const lineDelta = linesAdded - linesRemoved;
 
-                const changeStartLine = change.range.start.line; // 0-based index
-                const changeEndLine = change.range.end.line;     // 0-based index
+                const changeStartLine = change.range.start.line; // 0-based
+                const changeEndLine = change.range.end.line;     // 0-based
 
                 for (const bookmark of fileBookmarks) {
-                    const startLine = bookmark.line - 1; // 0-based index
+                    const startLine = bookmark.line - 1; // 0-based
                     const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
 
                     // -----------------------------------------------------------------
-                    // CAS A : Suppression STRICTEMENT AVANT la ligne du signet
+                    // DÉTECTION : Est-ce qu'on remonte la ligne du signet via sélection vers le haut ?
                     // -----------------------------------------------------------------
-                    if (changeEndLine < startLine) {
+                    // Cas où la sélection part du début/milieu de la ligne du signet vers le haut,
+                    // sans englober ni détruire la ligne du signet elle-même.
+                    const isSelectionUpwardsFromBookmark =
+                        changeStartLine < startLine &&
+                        changeEndLine === startLine &&
+                        change.range.end.character < event.document.lineAt(changeEndLine).text.length;
+
+                    // -----------------------------------------------------------------
+                    // 1. SUPPRESSION DU SIGNET
+                    // -----------------------------------------------------------------
+                    const isLineDeleted = !isSelectionUpwardsFromBookmark && (
+                        // A. Suppression qui dépasse/englobe la ligne du signet
+                        (changeStartLine <= startLine && changeEndLine > endLine) ||
+                        // B. Suppression du saut de ligne détruisant la ligne (Backspace en début de ligne / Suppr fin de ligne précédente)
+                        (changeStartLine < startLine && changeEndLine >= startLine && lineDelta < 0) ||
+                        // C. Suppression multi-lignes démarrant sur la ligne du signet
+                        (changeStartLine === startLine && changeEndLine > startLine) ||
+                        // D. Dépassement du nombre total de lignes
+                        (bookmark.line > event.document.lineCount)
+                    );
+
+                    if (isLineDeleted) {
+                        this.bookmarks.delete(bookmark.id);
+                        hasChanged = true;
+                        continue;
+                    }
+
+                    // -----------------------------------------------------------------
+                    // 2. SELECTION VERS LE HAUT (Le signet remonte à la ligne de destination)
+                    // -----------------------------------------------------------------
+                    if (isSelectionUpwardsFromBookmark) {
+                        const targetLine = changeStartLine + 1; // 1-based index
+                        const diff = targetLine - bookmark.line;
+
+                        bookmark.line = targetLine;
+                        bookmark.range = new vscode.Range(changeStartLine, 0, changeStartLine, 0);
+
+                        if (bookmark.highlightRange) {
+                            bookmark.highlightRange.startLine += diff;
+                            bookmark.highlightRange.endLine += diff;
+                        }
+
+                        bookmark.updatedAt = Date.now();
+                        this.bookmarks.set(bookmark.id, bookmark);
+                        hasChanged = true;
+                    }
+                    // -----------------------------------------------------------------
+                    // 3. MODIFICATION STRICTEMENT AVANT LE SIGNET (Décalage vertical standard)
+                    // -----------------------------------------------------------------
+                    else if (changeEndLine < startLine) {
                         if (lineDelta !== 0) {
                             bookmark.line += lineDelta;
                             if (bookmark.line < 1) { bookmark.line = 1; }
@@ -64,47 +113,15 @@ export class BookmarkProvider {
                         }
                     }
                     // -----------------------------------------------------------------
-                    // CAS B : Remontée du code (Shift+Haut + Backspace)
-                    // -----------------------------------------------------------------
-                    else if (changeStartLine < startLine && changeEndLine <= startLine) {
-                        const targetLine = changeStartLine + 1; // 1-based index
-                        const diff = targetLine - bookmark.line;
-
-                        bookmark.line = targetLine;
-                        const newLineIndex = bookmark.line - 1;
-                        bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
-
-                        if (bookmark.highlightRange) {
-                            bookmark.highlightRange.startLine += diff;
-                            bookmark.highlightRange.endLine += diff;
-                        }
-
-                        bookmark.updatedAt = Date.now();
-                        this.bookmarks.set(bookmark.id, bookmark);
-                        hasChanged = true;
-                    }
-                    // -----------------------------------------------------------------
-                    // CAS C : SUPPRESSION DU SIGNET
-                    // -----------------------------------------------------------------
-                    else if (
-                        (changeStartLine <= startLine && changeEndLine > endLine) ||
-                        bookmark.line > event.document.lineCount
-                    ) {
-                        this.bookmarks.delete(bookmark.id);
-                        hasChanged = true;
-                    }
-                    // -----------------------------------------------------------------
-                    // CAS D : ÉDITION SUR LA LIGNE MÊME DU SIGNET
+                    // 4. ÉDITION SUR LA LIGNE MÊME DU SIGNET
                     // -----------------------------------------------------------------
                     else if (changeStartLine === startLine) {
-                        if (lineDelta !== 0) {
+                        if (lineDelta > 0) {
                             const lineText = event.document.lineAt(changeStartLine).text;
                             const textBeforeChange = lineText.substring(0, change.range.start.character);
 
                             if (textBeforeChange.trim() === '') {
                                 bookmark.line += lineDelta;
-                                if (bookmark.line < 1) { bookmark.line = 1; }
-
                                 const newLineIndex = bookmark.line - 1;
                                 bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
 
@@ -121,7 +138,7 @@ export class BookmarkProvider {
                         }
                     }
                     // -----------------------------------------------------------------
-                    // CAS E : ÉDITION À L'INTÉRIEUR D'UNE PLAGE PLURI-LIGNES
+                    // 5. ÉDITION À L'INTÉRIEUR D'UNE PLAGE PLURI-LIGNES
                     // -----------------------------------------------------------------
                     else if (changeStartLine > startLine && changeStartLine <= endLine) {
                         if (bookmark.highlightRange && lineDelta !== 0) {
@@ -197,8 +214,8 @@ export class BookmarkProvider {
         cursorLine: number,
         highlightRange?: { startLine: number; endLine: number },
         comment?: string,
-        tag?: string,   // <-- Nouveau
-        title?: string  // <-- Nouveau
+        tag?: string,
+        title?: string
     ): Bookmark | null {
         const line = cursorLine + 1;
 
