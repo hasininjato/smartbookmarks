@@ -11,6 +11,7 @@ import { ListBookmarksCommand } from './commands/listBookmarksCommand';
 import { ClearAllBookmarksCommand } from './commands/clearAllBookmarksCommand';
 import { ClearFileBookmarksCommand } from './commands/clearFileBookmarksCommand';
 import { AddBookmarkWithCommentCommand } from './commands/addBookmarkWithCommentCommand';
+import { RenameBookmarkCommand } from './commands/renameBookmarkCommand';
 
 let provider: BookmarkProvider;
 let tracker: SymbolTracker;
@@ -33,7 +34,15 @@ export function activate(context: vscode.ExtensionContext): void {
   const clearFileCommand = new ClearFileBookmarksCommand(provider);
   const addBookmarkWithCommentCmd = new AddBookmarkWithCommentCommand(provider);
 
+  const treeView = vscode.window.createTreeView('smartBookmarksView', {
+    treeDataProvider: treeViewProvider,
+    showCollapseAll: true
+  });
+
+  const renameCommand = new RenameBookmarkCommand(provider, treeView);
+
   context.subscriptions.push(
+    // Enregistrement des commandes standard
     vscode.commands.registerCommand(addCommand.commandId, () => addCommand.execute()),
     vscode.commands.registerCommand(nextCommand.commandId, () => nextCommand.execute()),
     vscode.commands.registerCommand(prevCommand.commandId, () => prevCommand.execute()),
@@ -41,20 +50,24 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(clearAllCommand.commandId, () => clearAllCommand.execute()),
     vscode.commands.registerCommand(clearFileCommand.commandId, () => clearFileCommand.execute()),
     vscode.commands.registerCommand(addBookmarkWithCommentCmd.commandId, () => addBookmarkWithCommentCmd.execute()),
-    // commandes pour les corbeilles
+
+    // Commande de renommage (F2 / Inline Edit)
+    vscode.commands.registerCommand(renameCommand.commandId, (node?: BookmarkTreeItem) => renameCommand.execute(node)),
+
+    // Suppression d'un seul signet depuis le TreeView
     vscode.commands.registerCommand('smartbookmarks.deleteSingleBookmark', (node: BookmarkTreeItem) => {
       if (node?.bookmark) {
         provider.delete(node.bookmark.id);
       }
     }),
+
     // Corbeille sur la ligne d'un FICHIER avec popup de confirmation
     vscode.commands.registerCommand('smartbookmarks.deleteFileBookmarksFromTree', async (node: BookmarkTreeItem) => {
       if (node?.filePath) {
-        // Récupère le nombre de signets pour le message
-        const count = provider.getBookmarks().filter(b => b.filePath === node.filePath).length;
+        const count = provider.getForFile(node.filePath).length;
 
         const answer = await vscode.window.showWarningMessage(
-          `Are you sure you want to delete the ${count} bookmark(s) from this file?`,
+          `Voulez-vous vraiment supprimer les ${count} signet(s) de ce fichier ?`,
           { modal: true },
           'Supprimer'
         );
@@ -63,16 +76,8 @@ export function activate(context: vscode.ExtensionContext): void {
           provider.clearForFile(node.filePath);
         }
       }
-    })
-  );
-
-  const treeView = vscode.window.createTreeView('smartBookmarksView', {
-    treeDataProvider: treeViewProvider,
-    showCollapseAll: true
-  });
-  context.subscriptions.push(treeView);
-
-  context.subscriptions.push(
+    }),
+    treeView,
     tracker,
     decorationProvider,
     statusBarProvider

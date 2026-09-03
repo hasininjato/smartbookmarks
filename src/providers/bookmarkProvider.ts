@@ -338,6 +338,16 @@ export class BookmarkProvider {
         }
     }
 
+    public updateTitleById(id: string, newTitle?: string): void {
+        const bookmark = this.bookmarks.get(id);
+
+        if (bookmark) {
+            bookmark.title = newTitle;
+            bookmark.updatedAt = Date.now();
+            this.notifyAndSave();
+        }
+    }
+
     private addToIndex(bookmark: Bookmark): void {
         this.bookmarks.set(bookmark.id, bookmark);
 

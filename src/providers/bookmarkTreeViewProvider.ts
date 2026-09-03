@@ -105,7 +105,7 @@ export class BookmarkTreeItem extends vscode.TreeItem {
                             bookmark.line - 1, 0,
                             bookmark.line - 1, 0
                         ),
-                        preserveFocus: false,
+                        preserveFocus: true,
                         preview: false,
                         viewColumn: vscode.ViewColumn.Active
                     }

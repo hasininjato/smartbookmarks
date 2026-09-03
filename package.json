@@ -77,6 +77,12 @@
         "command": "smartbookmarks.addBookmarkWithComment",
         "title": "Smart Bookmark: Add bookmark with notes",
         "category": "Smart Bookmarks"
+      },
+      {
+        "command": "smartbookmarks.renameBookmark",
+        "title": "Renommer le signet",
+        "category": "Smart Bookmarks",
+        "icon": "$(edit)"
       }
     ],
     "keybindings": [
@@ -110,6 +116,11 @@
         "key": "ctrl+shift+c",
         "mac": "cmd+shift+c",
         "when": "editorTextFocus"
+      },
+      {
+        "command": "smartbookmarks.renameBookmark",
+        "key": "f2",
+        "when": "focusedView == smartBookmarksView"
       }
     ],
     "configuration": {
@@ -193,6 +204,11 @@
         {
           "command": "smartbookmarks.deleteFileBookmarksFromTree",
           "when": "viewItem == fileItem",
+          "group": "inline"
+        },
+        {
+          "command": "smartbookmarks.renameBookmark",
+          "when": "view == smartBookmarksView && viewItem == bookmarkItem",
           "group": "inline"
         }
       ]
