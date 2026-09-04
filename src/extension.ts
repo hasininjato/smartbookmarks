@@ -41,6 +41,35 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const renameCommand = new RenameBookmarkCommand(provider, treeView);
 
+  // Fonction pour mettre à jour le badge et le tooltip au survol de l'icône
+  const updateBadgeAndTooltip = () => {
+    const totalBookmarks = provider.getBookmarks().length;
+
+    if (totalBookmarks > 0) {
+      // 1. Le badge numéroté sur l'icône de la barre d'activités
+      treeView.badge = {
+        value: totalBookmarks,
+        tooltip: `${totalBookmarks} bookmark${totalBookmarks > 1 ? 's' : ''}`
+      };
+
+      // 2. Définit le titre et le sous-titre pour former "Smart Bookmarks — N bookmarks"
+      treeView.title = 'Smart Bookmarks';
+      treeView.description = `— ${totalBookmarks} bookmark${totalBookmarks > 1 ? 's' : ''}`;
+    } else {
+      treeView.badge = undefined;
+      treeView.title = 'Smart Bookmarks';
+      treeView.description = undefined;
+    }
+  };
+
+  // Initialisation au démarrage
+  updateBadgeAndTooltip();
+
+  // Écoute des modifications de signets pour rafraîchir le badge
+  const onBookmarksChangedSub = provider.onDidChangeBookmarks(() => {
+    updateBadgeAndTooltip();
+  });
+
   context.subscriptions.push(
     // Enregistrement des commandes standard
     vscode.commands.registerCommand(addCommand.commandId, () => addCommand.execute()),
@@ -78,6 +107,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     treeView,
+    onBookmarksChangedSub,
     tracker,
     decorationProvider,
     statusBarProvider
