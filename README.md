@@ -73,6 +73,7 @@ From the panel you can:
 * Rename bookmarks
 * Delete individual bookmarks
 * Delete all bookmarks belonging to a file
+* Delete all bookmarks
 
 ### 🎨 Visual markers
 
@@ -117,6 +118,7 @@ All commands are also available through the **Command Palette** (`Ctrl+Shift+P` 
 5. The bookmark appears in the editor and in the **Smart Bookmarks** panel.
 6. For a selected range, a **purple vertical line** highlights the bookmarked code.
 7. Navigate between bookmarks using `Ctrl+Alt+N` / `Ctrl+Alt+P`.
+8. Press `Ctrl+Shift+C` (`Cmd+Shift+C` on macOS) to add a customized bookmark, choose a tag or create a new one, fill in the title of the bookmark and a description
 
 You can also use the Command Palette and search for **Smart Bookmark** commands.
 
