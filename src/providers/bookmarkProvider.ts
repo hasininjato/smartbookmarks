@@ -108,17 +108,16 @@ export class BookmarkProvider {
         for (const bookmark of fileBookmarks) {
             const startLine = bookmark.line - 1;
             const endLine = bookmark.highlightRange ? bookmark.highlightRange.endLine : startLine;
-
+            const startsAtLineHead =
+                changeStartLine < startLine ||
+                (changeStartLine === startLine && change.range.start.character === 0);
             const isSelectionUpwardsFromBookmark =
                 changeStartLine < startLine &&
-                changeEndLine === startLine &&
-                change.range.end.character < document.lineAt(changeEndLine).text.length;
-
+                changeEndLine === startLine;
             // 1. Suppression du signet
             const isLineDeleted = !isSelectionUpwardsFromBookmark && (
-                (changeStartLine <= startLine && changeEndLine > endLine) ||
+                (startsAtLineHead && changeEndLine > endLine) ||
                 (changeStartLine < startLine && changeEndLine >= startLine && lineDelta < 0) ||
-                (changeStartLine === startLine && changeEndLine > startLine) ||
                 (bookmark.line > document.lineCount)
             );
 
@@ -177,6 +176,11 @@ export class BookmarkProvider {
                     } else if (bookmark.highlightRange) {
                         bookmark.highlightRange.endLine += lineDelta;
                     }
+                    bookmark.updatedAt = Date.now();
+                    hasChanged = true;
+                } else if (lineDelta < 0 && bookmark.highlightRange) {
+                    // Fusion de lignes : tout ce qui suit remonte de |lineDelta|
+                    bookmark.highlightRange.endLine += lineDelta;
                     bookmark.updatedAt = Date.now();
                     hasChanged = true;
                 }
