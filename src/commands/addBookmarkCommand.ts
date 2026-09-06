@@ -46,7 +46,24 @@ export class AddBookmarkCommand {
             };
         }
 
-        const bookmark = this.provider.toggle(symbolInfo, document.uri.fsPath, startLine, highlightRange);
+        // Ancre textuelle : contenu de la ligne au moment de la création du signet,
+        // utilisée pour retrouver le signet si sa ligne est supprimée puis restaurée
+        // (undo) ou déplacée manuellement ailleurs dans le fichier.
+        const lineText = document.lineAt(startLine).text;
+
+        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus.
+        // Nécessaire quand lineText seul correspond à plusieurs lignes du fichier
+        // (ex: du code répétitif comme deux endpoints avec une ligne identique).
+        const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
+
+        const bookmark = this.provider.toggle(
+            symbolInfo,
+            document.uri.fsPath,
+            startLine,
+            lineText,
+            lineTextContext,
+            highlightRange
+        );
 
         if (bookmark) {
             vscode.window.showInformationMessage(`📌 Signet ajouté : ${symbolInfo.name}`);

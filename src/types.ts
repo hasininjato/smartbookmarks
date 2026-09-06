@@ -7,6 +7,13 @@ export interface Bookmark {
     filePath: string;
     range: vscode.Range;
     line: number;
+    // Ancre textuelle pour la récupération après suppression/fusion :
+    // - lineText : contenu de la ligne du signet
+    // - lineTextContext : contenu de la ligne juste au-dessus, utilisé pour
+    //   désambiguïser quand lineText seul correspond à plusieurs lignes du fichier
+    //   (ex: du code répétitif comme deux endpoints avec une ligne identique)
+    lineText?: string;
+    lineTextContext?: string;
     createdAt: number;
     updatedAt: number;
     highlightRange?: {

@@ -98,6 +98,16 @@ export class AddBookmarkWithCommentCommand {
             };
         }
 
+        // Ancre textuelle : contenu de la ligne au moment de la création du signet,
+        // utilisée pour retrouver le signet si sa ligne est supprimée puis restaurée
+        // (undo) ou déplacée manuellement ailleurs dans le fichier.
+        const lineText = document.lineAt(startLine).text;
+
+        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus.
+        // Nécessaire quand lineText seul correspond à plusieurs lignes du fichier
+        // (ex: du code répétitif comme deux endpoints avec une ligne identique).
+        const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
+
         // 1. Sélection / Suppression de Tag
         const selectedTagItem = await this.showTagQuickPickWithDelete();
         if (!selectedTagItem) { return; }
@@ -168,6 +178,8 @@ export class AddBookmarkWithCommentCommand {
             symbol,
             filePath,
             startLine,
+            lineText,
+            lineTextContext,
             highlightRange,
             cleanComment,
             selectedTagLabel,
