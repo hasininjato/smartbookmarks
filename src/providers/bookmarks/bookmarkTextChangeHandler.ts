@@ -65,10 +65,6 @@ export function handleTextChange(
         }
 
         // 2. Remontée via sélection vers le haut
-        // NOTE : ce cas est ambigu (fusion possible avec du contenu existant),
-        // donc on NE touche PAS à bookmark.lineText/lineTextContext ici — l'ancre
-        // d'origine est préservée pour permettre une future récupération (voir
-        // vérification de dérive en fin de boucle).
         if (isSelectionUpwardsFromBookmark) {
             const targetLine = changeStartLine + 1;
             const diff = targetLine - bookmark.line;
@@ -85,8 +81,6 @@ export function handleTextChange(
             hasChanged = true;
         }
         // 3. Décalage vertical standard (modification avant le signet)
-        // Cas non-ambigu : le contenu de la ligne du signet n'est jamais touché,
-        // seul son numéro de ligne change. L'ancre reste donc valide telle quelle.
         else if (changeEndLine < startLine) {
             if (lineDelta !== 0) {
                 bookmark.line = Math.max(1, bookmark.line + lineDelta);
@@ -110,15 +104,11 @@ export function handleTextChange(
 
                 const bookmarkKeyText = bookmark.lineText ? bookmark.lineText.trim() : '';
 
-                // Détermine si TOUT le contenu du signet a été repoussé sur la ligne suivante :
-                // - Soit Entrée au tout début / dans l'indentation (textBeforeChange est vide)
-                // - Soit Entrée juste avant le texte du signet après une fusion (Ctrl+Z ou ré-séparation)
                 const isWholeBookmarkPushedDown =
                     textBeforeChange.trim() === '' ||
                     (bookmarkKeyText !== '' && !textBeforeChange.includes(bookmarkKeyText) && pushedText.includes(bookmarkKeyText));
 
                 if (isWholeBookmarkPushedDown) {
-                    // Tout le signet descend d'une ligne (startLine et endLine décalés ensemble)
                     bookmark.line += lineDelta;
                     const newLineIndex = bookmark.line - 1;
                     bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
@@ -127,8 +117,10 @@ export function handleTextChange(
                         highlightRange.startLine += lineDelta;
                         highlightRange.endLine += lineDelta;
                     }
+                    if (newLineIndex >= 0 && newLineIndex < documentLineCount) {
+                        bookmark.lineText = document.lineAt(newLineIndex).text;
+                    }
                 } else if (highlightRange) {
-                    // Entrée au milieu du texte du signet : on étend la fin de la plage
                     if (startLine < endLine) {
                         highlightRange.endLine += lineDelta;
                     }
@@ -152,16 +144,13 @@ export function handleTextChange(
             if (highlightRange && lineDelta !== 0) {
                 let shouldUpdateEndLine = true;
 
-                // Si l'édition se fait exactement sur la DERNIÈRE ligne du bloc
                 if (changeStartLine === endLine) {
                     if (lineDelta > 0) {
-                        // Si la ligne créée est vide, c'est qu'on a fait Entrée au dernier caractère (écriture HORS du bloc)
                         const isAtLastChar = document.lineAt(changeStartLine + lineDelta).text.trim() === '';
                         if (isAtLastChar) {
                             shouldUpdateEndLine = false;
                         }
                     } else if (lineDelta < 0) {
-                        // Ctrl+Z ou fusion depuis la ligne du dessous (hors bloc) : ne pas réduire la plage
                         shouldUpdateEndLine = false;
                     }
                 }
@@ -174,9 +163,7 @@ export function handleTextChange(
             }
         }
 
-        // Vérification de dérive : si le contenu de la ligne actuelle du signet ne
-        // correspond plus à son ancre textuelle, on tente de la retrouver ailleurs
-        // dans le fichier (undo qui restaure une fusion, déplacement manuel du bloc).
+        // Vérification de dérive
         if (bookmark.lineText) {
             const currentLineIndex = bookmark.line - 1;
             if (currentLineIndex >= 0 && currentLineIndex < documentLineCount) {
@@ -184,25 +171,31 @@ export function handleTextChange(
                 const anchorText = bookmark.lineText.trim();
 
                 if (currentText !== anchorText) {
-                    const recoveredLine = findMatchingLine(
-                        document,
-                        bookmark.lineText,
-                        currentLineIndex,
-                        bookmark.lineTextContext
-                    );
+                    // FIX DUPLIQUÉS : Si la ligne contient TOUJOURS le texte du signet (ex: après fusion),
+                    // il n'y a pas de dérive distante, on ne cherche PAS ailleurs dans le fichier.
+                    const isAnchorStillPresent = anchorText !== '' && currentText.includes(anchorText);
 
-                    if (recoveredLine !== null && recoveredLine !== currentLineIndex) {
-                        const diff = recoveredLine - currentLineIndex;
-                        bookmark.line = recoveredLine + 1;
-                        bookmark.range = new vscode.Range(recoveredLine, 0, recoveredLine, 0);
+                    if (!isAnchorStillPresent) {
+                        const recoveredLine = findMatchingLine(
+                            document,
+                            bookmark.lineText,
+                            currentLineIndex,
+                            bookmark.lineTextContext
+                        );
 
-                        if (highlightRange) {
-                            highlightRange.startLine += diff;
-                            highlightRange.endLine += diff;
+                        if (recoveredLine !== null && recoveredLine !== currentLineIndex) {
+                            const diff = recoveredLine - currentLineIndex;
+                            bookmark.line = recoveredLine + 1;
+                            bookmark.range = new vscode.Range(recoveredLine, 0, recoveredLine, 0);
+
+                            if (highlightRange) {
+                                highlightRange.startLine += diff;
+                                highlightRange.endLine += diff;
+                            }
+
+                            bookmark.updatedAt = Date.now();
+                            hasChanged = true;
                         }
-
-                        bookmark.updatedAt = Date.now();
-                        hasChanged = true;
                     }
                 }
             }
