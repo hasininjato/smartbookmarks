@@ -148,9 +148,25 @@ export function handleTextChange(
         // 5. Édition à l'intérieur d'une plage multi-lignes
         else if (changeStartLine > startLine && changeStartLine <= endLine) {
             if (highlightRange && lineDelta !== 0) {
-                highlightRange.endLine += lineDelta;
-                bookmark.updatedAt = Date.now();
-                hasChanged = true;
+                let shouldUpdateEndLine = true;
+
+                if (changeStartLine === endLine) {
+                    if (lineDelta > 0) {
+                        // Entrée sur la dernière ligne : ne pas étendre si on est au tout dernier caractère
+                        const isAtLastChar = document.lineAt(changeStartLine + lineDelta).text.trim() === '';
+                        if (isAtLastChar) {
+                            shouldUpdateEndLine = false;
+                        }
+                    } else if (lineDelta < 0) {
+                        // Ctrl+Z ou fusion de la ligne du dessous : la suppression est hors du bloc, ne pas réduire
+                        shouldUpdateEndLine = false;
+                    }
+                }
+                if (shouldUpdateEndLine) {
+                    highlightRange.endLine += lineDelta;
+                    bookmark.updatedAt = Date.now();
+                    hasChanged = true;
+                }
             }
         }
 
