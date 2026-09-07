@@ -3,6 +3,7 @@
   "displayName": "Smart Bookmarks",
   "description": "Bookmarks that follow your code symbols, not line numbers",
   "version": "0.0.1",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.80.0"
   },
