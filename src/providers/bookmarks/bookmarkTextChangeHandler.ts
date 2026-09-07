@@ -101,15 +101,24 @@ export function handleTextChange(
                 hasChanged = true;
             }
         }
-        // 4. Édition sur la ligne même du signet
+        // 4. Édition sur la première ligne de la plage (startLine)
         else if (changeStartLine === startLine) {
             if (lineDelta > 0) {
                 const lineText = document.lineAt(changeStartLine).text;
                 const textBeforeChange = lineText.substring(0, changeStartChar);
+                const pushedText = document.lineAt(changeStartLine + lineDelta).text;
 
-                if (textBeforeChange.trim() === '') {
-                    // Insertion pure avant tout contenu réel : le contenu du signet
-                    // descend intact, l'ancre reste donc valide sans modification.
+                const bookmarkKeyText = bookmark.lineText ? bookmark.lineText.trim() : '';
+
+                // Détermine si TOUT le contenu du signet a été repoussé sur la ligne suivante :
+                // - Soit Entrée au tout début / dans l'indentation (textBeforeChange est vide)
+                // - Soit Entrée juste avant le texte du signet après une fusion (Ctrl+Z ou ré-séparation)
+                const isWholeBookmarkPushedDown =
+                    textBeforeChange.trim() === '' ||
+                    (bookmarkKeyText !== '' && !textBeforeChange.includes(bookmarkKeyText) && pushedText.includes(bookmarkKeyText));
+
+                if (isWholeBookmarkPushedDown) {
+                    // Tout le signet descend d'une ligne (startLine et endLine décalés ensemble)
                     bookmark.line += lineDelta;
                     const newLineIndex = bookmark.line - 1;
                     bookmark.range = new vscode.Range(newLineIndex, 0, newLineIndex, 0);
@@ -118,50 +127,45 @@ export function handleTextChange(
                         highlightRange.startLine += lineDelta;
                         highlightRange.endLine += lineDelta;
                     }
+                } else if (highlightRange) {
+                    // Entrée au milieu du texte du signet : on étend la fin de la plage
+                    if (startLine < endLine) {
+                        highlightRange.endLine += lineDelta;
+                    }
                 }
-                // Cas ambigu (insertion au milieu de la ligne, ex: undo d'une fusion) :
-                // on ne touche NI à l'ancre NI au highlight ici. Si c'est effectivement
-                // la restauration d'une fusion, la vérification de dérive plus bas va
-                // retrouver l'ancienne ligne et repositionner tout le highlightRange
-                // (startLine ET endLine) en un seul coup via son propre diff — l'ajuster
-                // aussi ici provoquerait un double décalage de endLine.
                 bookmark.updatedAt = Date.now();
                 hasChanged = true;
             } else if (lineDelta < 0) {
-                // Fusion de lignes : cas ambigu, on NE touche PAS à l'ancre —
-                // elle reste la référence pour une récupération future.
                 if (highlightRange) {
                     highlightRange.endLine += lineDelta;
                 }
                 bookmark.updatedAt = Date.now();
                 hasChanged = true;
             } else {
-                // Édition sans changement de nombre de lignes : édition intentionnelle
-                // du contenu de la ligne bookmarkée elle-même. On rafraîchit lineText
-                // pour suivre cette évolution volontaire (le contexte au-dessus n'a
-                // pas bougé, pas besoin de le rafraîchir).
                 bookmark.lineText = document.lineAt(startLine).text;
                 bookmark.updatedAt = Date.now();
                 hasChanged = true;
             }
         }
-        // 5. Édition à l'intérieur d'une plage multi-lignes
+        // 5. Édition à l'intérieur ou sur la dernière ligne de la plage
         else if (changeStartLine > startLine && changeStartLine <= endLine) {
             if (highlightRange && lineDelta !== 0) {
                 let shouldUpdateEndLine = true;
 
+                // Si l'édition se fait exactement sur la DERNIÈRE ligne du bloc
                 if (changeStartLine === endLine) {
                     if (lineDelta > 0) {
-                        // Entrée sur la dernière ligne : ne pas étendre si on est au tout dernier caractère
+                        // Si la ligne créée est vide, c'est qu'on a fait Entrée au dernier caractère (écriture HORS du bloc)
                         const isAtLastChar = document.lineAt(changeStartLine + lineDelta).text.trim() === '';
                         if (isAtLastChar) {
                             shouldUpdateEndLine = false;
                         }
                     } else if (lineDelta < 0) {
-                        // Ctrl+Z ou fusion de la ligne du dessous : la suppression est hors du bloc, ne pas réduire
+                        // Ctrl+Z ou fusion depuis la ligne du dessous (hors bloc) : ne pas réduire la plage
                         shouldUpdateEndLine = false;
                     }
                 }
+
                 if (shouldUpdateEndLine) {
                     highlightRange.endLine += lineDelta;
                     bookmark.updatedAt = Date.now();
