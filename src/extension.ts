@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       // 2. Définit le titre et le sous-titre pour former "Smart Bookmarks — N bookmarks"
       treeView.title = 'Smart Bookmarks';
-      treeView.description = `— ${totalBookmarks} bookmark${totalBookmarks > 1 ? 's' : ''}`;
+      treeView.description = `– ${totalBookmarks} bookmark${totalBookmarks > 1 ? 's' : ''}`;
     } else {
       treeView.badge = undefined;
       treeView.title = 'Smart Bookmarks';
