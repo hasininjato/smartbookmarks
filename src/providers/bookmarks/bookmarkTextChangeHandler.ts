@@ -45,8 +45,6 @@ export function handleTextChange(
         );
 
         if (isLineDeleted) {
-            // Avant de supprimer définitivement : le contenu de la ligne existe-t-il
-            // encore ailleurs dans le fichier (undo, ligne redescendue plus loin) ?
             const recoveredLine = bookmark.lineText
                 ? findMatchingLine(document, bookmark.lineText, startLine, bookmark.lineTextContext)
                 : null;
@@ -121,9 +119,8 @@ export function handleTextChange(
                         bookmark.lineText = document.lineAt(newLineIndex).text;
                     }
                 } else if (highlightRange) {
-                    if (startLine < endLine) {
-                        highlightRange.endLine += lineDelta;
-                    }
+                    // FIX: On incrémente endLine directement sans exiger (startLine < endLine)
+                    highlightRange.endLine += lineDelta;
                 }
                 bookmark.updatedAt = Date.now();
                 hasChanged = true;
@@ -171,8 +168,6 @@ export function handleTextChange(
                 const anchorText = bookmark.lineText.trim();
 
                 if (currentText !== anchorText) {
-                    // FIX DUPLIQUÉS : Si la ligne contient TOUJOURS le texte du signet (ex: après fusion),
-                    // il n'y a pas de dérive distante, on ne cherche PAS ailleurs dans le fichier.
                     const isAnchorStillPresent = anchorText !== '' && currentText.includes(anchorText);
 
                     if (!isAnchorStillPresent) {
