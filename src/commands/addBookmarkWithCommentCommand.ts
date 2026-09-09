@@ -21,7 +21,6 @@ const EXTENDED_PRESET_ICONS: { label: string; description: string }[] = [
     { label: '$(shield) shield', description: 'Sécurité, authentification, tokens' },
     { label: '$(lock) lock', description: 'Permissions, accès restreint' },
     { label: '$(key) key', description: 'Clés API, secrets' },
-    { label: '$(zap) zap', description: 'Performance, optimisation' },
     { label: '$(pulse) pulse', description: 'Monitoring, métriques, santé' },
     { label: '$(flame) flame', description: 'Urgence maximale, hotfix' },
 

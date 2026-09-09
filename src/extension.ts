@@ -22,7 +22,7 @@ let statusBarProvider: BookmarkStatusBarProvider;
 export function activate(context: vscode.ExtensionContext): void {
   provider = new BookmarkProvider(context);
   tracker = new SymbolTracker(provider);
-  decorationProvider = new BookmarkDecorationProvider(provider);
+  decorationProvider = new BookmarkDecorationProvider(provider, context);
   treeViewProvider = new BookmarkTreeViewProvider(provider);
   statusBarProvider = new BookmarkStatusBarProvider(provider);
 
