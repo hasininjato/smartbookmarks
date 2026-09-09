@@ -57,16 +57,18 @@ export class BookmarkProvider {
             bookmark.symbolName = updates.symbol.name;
             bookmark.symbolKind = updates.symbol.kind;
         }
-        if (updates.title !== undefined) {
+
+        // Utilisation de 'property' in updates pour autoriser la réinitialisation à undefined
+        if ('title' in updates) {
             bookmark.title = updates.title;
         }
-        if (updates.comment !== undefined) {
+        if ('comment' in updates) {
             bookmark.comment = updates.comment;
         }
-        if (updates.tag !== undefined) {
-            bookmark.tag = updates.tag;
+        if ('tag' in updates) {
+            bookmark.tag = updates.tag; // Réinitialise bien à undefined si aucun tag n'est choisi
         }
-        if (updates.highlightRange !== undefined) {
+        if ('highlightRange' in updates) {
             bookmark.highlightRange = updates.highlightRange;
         }
 

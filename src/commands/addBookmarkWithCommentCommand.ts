@@ -7,6 +7,7 @@ import { EXTENDED_PRESET_ICONS } from '../utils/codicon';
 interface TagQuickPickItem extends vscode.QuickPickItem {
     rawTag?: BookmarkTagConfig;
     isCreateAction?: boolean;
+    isNoTagAction?: boolean;
 }
 
 export class AddBookmarkWithCommentCommand {
@@ -57,13 +58,17 @@ export class AddBookmarkWithCommentCommand {
         const lineText = document.lineAt(startLine).text;
         const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
 
-        // 1. Sélection / Suppression / Modification du Tag
+        // 1. Sélection / Modification / Suppression du Tag
         const selectedTagItem = await this.showTagQuickPickWithDelete(existingBookmark?.tag);
         if (!selectedTagItem) { return; }
 
         let selectedTagLabel: string | undefined = undefined;
 
-        if (selectedTagItem.isCreateAction) {
+        if (selectedTagItem.isNoTagAction) {
+            // Option "Aucun tag" sélectionnée
+            selectedTagLabel = undefined;
+        } else if (selectedTagItem.isCreateAction) {
+            // Création d'un nouveau tag
             const rawTagName = await vscode.window.showInputBox({
                 prompt: 'Nom du nouveau tag (ex: SECURITY, OPTIM, REFAC)',
                 placeHolder: 'SECURITY',
@@ -106,7 +111,7 @@ export class AddBookmarkWithCommentCommand {
             selectedTagLabel = selectedTagItem.rawTag.label.toUpperCase();
         }
 
-        // 2. Titre (Pré-rempli avec le titre existant en cas d'édition)
+        // 2. Titre (Pré-rempli si édition)
         const rawTitle = await vscode.window.showInputBox({
             prompt: isEditing ? 'Modifier le titre du signet' : 'Entrez un titre pour ce signet',
             value: existingBookmark?.title || '',
@@ -117,9 +122,9 @@ export class AddBookmarkWithCommentCommand {
         if (rawTitle === undefined) { return; }
         const cleanTitle = rawTitle.trim().length > 0 ? rawTitle.trim() : undefined;
 
-        // 3. Commentaire (Pré-rempli avec le commentaire existant si disponible)
+        // 3. Commentaire (Pré-rempli si édition)
         const rawComment = await this.askMultilineComment(existingBookmark?.comment);
-        if (rawComment === false) { return; } // Annulé par l'utilisateur
+        if (rawComment === false) { return; } // Action annulée par l'utilisateur
         const cleanComment = rawComment && rawComment.trim().length > 0 ? rawComment.trim() : undefined;
 
         // 4. Envoi au Provider (Ajout ou Mise à jour)
@@ -128,10 +133,10 @@ export class AddBookmarkWithCommentCommand {
                 symbol,
                 title: cleanTitle,
                 comment: cleanComment,
-                tag: selectedTagLabel,
+                tag: selectedTagLabel, // Mise à jour du tag (peut être redéfini ou mis à undefined)
                 highlightRange
             });
-            vscode.window.showInformationMessage(`Signet modifié à la ligne ${startLine + 1}.`);
+            vscode.window.showInformationMessage(`Signet mis à jour à la ligne ${startLine + 1}.`);
         } else {
             this.provider.toggle(
                 symbol,
@@ -204,7 +209,7 @@ export class AddBookmarkWithCommentCommand {
         return new Promise((resolve) => {
             const quickPick = vscode.window.createQuickPick<TagQuickPickItem>();
             quickPick.placeholder = currentTagLabel
-                ? `Tag actuel : ${currentTagLabel.toUpperCase()} (Choisissez pour modifier)`
+                ? `Tag actuel : ${currentTagLabel.toUpperCase()} (Sélectionnez pour changer)`
                 : 'Sélectionnez ou créez un tag pour ce signet';
             quickPick.ignoreFocusOut = true;
 
@@ -212,7 +217,17 @@ export class AddBookmarkWithCommentCommand {
                 const config = vscode.workspace.getConfiguration('smartbookmarks');
                 const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
 
-                const items: TagQuickPickItem[] = userTags.map(tag => {
+                const items: TagQuickPickItem[] = [];
+
+                // Option pour retirer/ne pas mettre de tag
+                items.push({
+                    label: '$(circle-slash) Aucun tag',
+                    description: 'Ne pas utiliser de tag pour ce signet',
+                    isNoTagAction: true
+                });
+
+                // Liste des tags configurés
+                const tagItems: TagQuickPickItem[] = userTags.map(tag => {
                     const isCurrent = currentTagLabel?.toUpperCase() === tag.label.toUpperCase();
                     const iconPrefix = tag.icon ? (tag.icon.startsWith('$(') ? tag.icon : `$(${tag.icon})`) : '$(tag)';
                     return {
@@ -226,6 +241,9 @@ export class AddBookmarkWithCommentCommand {
                     };
                 });
 
+                items.push(...tagItems);
+
+                // Option pour créer un nouveau tag
                 items.push({
                     label: '$(add) ➕ Créer un nouveau tag...',
                     description: 'Ajouter un tag personnalisé avec choix visuel d\'icône',
@@ -274,7 +292,6 @@ export class AddBookmarkWithCommentCommand {
     }
 
     private async askMultilineComment(existingComment?: string): Promise<string | undefined | false> {
-        // En cas de modification avec un commentaire existant, on propose d'abord de le conserver, modifier ou effacer.
         if (existingComment) {
             const action = await vscode.window.showQuickPick([
                 { label: '$(check) Conserver le commentaire actuel', action: 'keep', description: existingComment.replace(/\n/g, ' \\ ') },
