@@ -221,6 +221,30 @@ export class BookmarkProvider {
         }
     }
 
+    /**
+ * Renomme un tag sur tous les signets existants qui l'utilisaient
+ */
+    public renameTagInBookmarks(oldTagLabel: string, newTagLabel: string): void {
+        let hasChanges = false;
+        for (const bookmark of this.index.getAll()) {
+            if (bookmark.tag?.toUpperCase() === oldTagLabel.toUpperCase()) {
+                bookmark.tag = newTagLabel;
+                bookmark.updatedAt = Date.now();
+                hasChanges = true;
+            }
+        }
+        if (hasChanges) {
+            this.notifyAndSave();
+        }
+    }
+
+    /**
+     * Notifie un changement sans modifier les données (pour forcer le rafraîchissement d'icône)
+     */
+    public refresh(): void {
+        this.notifyAndSave();
+    }
+
     private renameBookmarkFile(bookmark: Bookmark, newPath: string): void {
         this.index.remove(bookmark);
         bookmark.filePath = newPath;
