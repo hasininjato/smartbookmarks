@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { BookmarkProvider } from '../providers/bookmarkProvider';
-import { BookmarkTagConfig, SymbolInfo } from '../types';
+import { Bookmark, BookmarkTagConfig, SymbolInfo } from '../types';
 import { getSymbolAtPosition } from '../utils/symbols';
 import { EXTENDED_PRESET_ICONS } from '../utils/codicon';
 
@@ -27,6 +27,10 @@ export class AddBookmarkWithCommentCommand {
         const startLine = selection.start.line;
         const endLine = selection.end.line;
 
+        // 0. Vérification si un signet existe déjà sur cette ligne
+        const existingBookmark: Bookmark | undefined = this.provider.getBookmark(filePath, startLine);
+        const isEditing = !!existingBookmark;
+
         const detectedSymbol = await getSymbolAtPosition(document, selection.start);
         const lineRange = new vscode.Range(startLine, 0, startLine, 0);
 
@@ -42,7 +46,7 @@ export class AddBookmarkWithCommentCommand {
             selectionRange: lineRange
         };
 
-        let highlightRange: { startLine: number; endLine: number } | undefined = undefined;
+        let highlightRange: { startLine: number; endLine: number } | undefined = existingBookmark?.highlightRange;
         if (endLine > startLine) {
             highlightRange = {
                 startLine: startLine,
@@ -50,18 +54,11 @@ export class AddBookmarkWithCommentCommand {
             };
         }
 
-        // Ancre textuelle : contenu de la ligne au moment de la création du signet,
-        // utilisée pour retrouver le signet si sa ligne est supprimée puis restaurée
-        // (undo) ou déplacée manuellement ailleurs dans le fichier.
         const lineText = document.lineAt(startLine).text;
-
-        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus.
-        // Nécessaire quand lineText seul correspond à plusieurs lignes du fichier
-        // (ex: du code répétitif comme deux endpoints avec une ligne identique).
         const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
 
-        // 1. Sélection / Suppression de Tag
-        const selectedTagItem = await this.showTagQuickPickWithDelete();
+        // 1. Sélection / Suppression / Modification du Tag
+        const selectedTagItem = await this.showTagQuickPickWithDelete(existingBookmark?.tag);
         if (!selectedTagItem) { return; }
 
         let selectedTagLabel: string | undefined = undefined;
@@ -79,14 +76,12 @@ export class AddBookmarkWithCommentCommand {
             const config = vscode.workspace.getConfiguration('smartbookmarks');
             let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
 
-            // Vérification si le tag existe déjà
             const existingTag = userTags.find(t => t.label.toUpperCase() === formattedTagName);
 
             if (existingTag) {
                 vscode.window.showInformationMessage(`Le tag "${formattedTagName}" existe déjà. Il a été sélectionné.`);
                 selectedTagLabel = existingTag.label;
             } else {
-                // Choix d'icône avec filtrage visuel
                 const selectedIcon = await this.showIconPicker();
                 if (!selectedIcon) { return; }
 
@@ -111,9 +106,10 @@ export class AddBookmarkWithCommentCommand {
             selectedTagLabel = selectedTagItem.rawTag.label.toUpperCase();
         }
 
-        // 2. Titre
+        // 2. Titre (Pré-rempli avec le titre existant en cas d'édition)
         const rawTitle = await vscode.window.showInputBox({
-            prompt: 'Entrez un titre pour ce signet',
+            prompt: isEditing ? 'Modifier le titre du signet' : 'Entrez un titre pour ce signet',
+            value: existingBookmark?.title || '',
             placeHolder: 'Ex: Vérification des droits d\'accès',
             ignoreFocusOut: true
         });
@@ -121,27 +117,36 @@ export class AddBookmarkWithCommentCommand {
         if (rawTitle === undefined) { return; }
         const cleanTitle = rawTitle.trim().length > 0 ? rawTitle.trim() : undefined;
 
-        // 3. Commentaire
-        const rawComment = await this.askMultilineComment();
+        // 3. Commentaire (Pré-rempli avec le commentaire existant si disponible)
+        const rawComment = await this.askMultilineComment(existingBookmark?.comment);
+        if (rawComment === false) { return; } // Annulé par l'utilisateur
         const cleanComment = rawComment && rawComment.trim().length > 0 ? rawComment.trim() : undefined;
 
-        // 4. Envoi au Provider
-        this.provider.toggle(
-            symbol,
-            filePath,
-            startLine,
-            lineText,
-            lineTextContext,
-            highlightRange,
-            cleanComment,
-            selectedTagLabel,
-            cleanTitle
-        );
+        // 4. Envoi au Provider (Ajout ou Mise à jour)
+        if (isEditing) {
+            this.provider.updateBookmark(filePath, startLine, {
+                symbol,
+                title: cleanTitle,
+                comment: cleanComment,
+                tag: selectedTagLabel,
+                highlightRange
+            });
+            vscode.window.showInformationMessage(`Signet modifié à la ligne ${startLine + 1}.`);
+        } else {
+            this.provider.toggle(
+                symbol,
+                filePath,
+                startLine,
+                lineText,
+                lineTextContext,
+                highlightRange,
+                cleanComment,
+                selectedTagLabel,
+                cleanTitle
+            );
+        }
     }
 
-    /**
-     * Permet de choisir une icône dans la liste exhaustive ou d'en taper n'importe quelle autre
-     */
     private async showIconPicker(): Promise<string | undefined> {
         return new Promise((resolve) => {
             const quickPick = vscode.window.createQuickPick();
@@ -162,13 +167,11 @@ export class AddBookmarkWithCommentCommand {
                     return;
                 }
 
-                // Filtrage dynamique des icônes
                 const filtered = baseItems.filter(item =>
                     item.label.toLowerCase().includes(search) ||
                     (item.description && item.description.toLowerCase().includes(search))
                 );
 
-                // Option d'utiliser directement l'identifiant saisi si aucun résultat exact
                 if (filtered.length === 0) {
                     quickPick.items = [{
                         label: `$(${search}) ${search}`,
@@ -197,10 +200,12 @@ export class AddBookmarkWithCommentCommand {
         });
     }
 
-    private showTagQuickPickWithDelete(): Promise<TagQuickPickItem | undefined> {
+    private showTagQuickPickWithDelete(currentTagLabel?: string): Promise<TagQuickPickItem | undefined> {
         return new Promise((resolve) => {
             const quickPick = vscode.window.createQuickPick<TagQuickPickItem>();
-            quickPick.placeholder = 'Sélectionnez ou créez un tag pour ce signet';
+            quickPick.placeholder = currentTagLabel
+                ? `Tag actuel : ${currentTagLabel.toUpperCase()} (Choisissez pour modifier)`
+                : 'Sélectionnez ou créez un tag pour ce signet';
             quickPick.ignoreFocusOut = true;
 
             const updateItems = () => {
@@ -208,9 +213,10 @@ export class AddBookmarkWithCommentCommand {
                 const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
 
                 const items: TagQuickPickItem[] = userTags.map(tag => {
+                    const isCurrent = currentTagLabel?.toUpperCase() === tag.label.toUpperCase();
                     const iconPrefix = tag.icon ? (tag.icon.startsWith('$(') ? tag.icon : `$(${tag.icon})`) : '$(tag)';
                     return {
-                        label: `${iconPrefix} ${tag.label.toUpperCase()}`,
+                        label: `${iconPrefix} ${tag.label.toUpperCase()}${isCurrent ? ' (Actuel)' : ''}`,
                         description: tag.description,
                         rawTag: tag,
                         buttons: [{
@@ -267,7 +273,23 @@ export class AddBookmarkWithCommentCommand {
         });
     }
 
-    private async askMultilineComment(): Promise<string | undefined> {
+    private async askMultilineComment(existingComment?: string): Promise<string | undefined | false> {
+        // En cas de modification avec un commentaire existant, on propose d'abord de le conserver, modifier ou effacer.
+        if (existingComment) {
+            const action = await vscode.window.showQuickPick([
+                { label: '$(check) Conserver le commentaire actuel', action: 'keep', description: existingComment.replace(/\n/g, ' \\ ') },
+                { label: '$(edit) Réécrire / Modifier le commentaire', action: 'edit' },
+                { label: '$(trash) Effacer le commentaire', action: 'clear' }
+            ], {
+                placeHolder: 'Commentaire existant détecté',
+                ignoreFocusOut: true
+            });
+
+            if (!action) { return false; } // Annulé
+            if (action.action === 'keep') { return existingComment; }
+            if (action.action === 'clear') { return undefined; }
+        }
+
         const lines: string[] = [];
         let adding = true;
 

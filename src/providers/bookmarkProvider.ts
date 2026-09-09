@@ -26,6 +26,55 @@ export class BookmarkProvider {
         });
     }
 
+    /**
+     * Récupère un signet à la ligne d'un fichier donné (cursorLine est en base 0)
+     */
+    public getBookmark(filePath: string, cursorLine: number): Bookmark | undefined {
+        const line = cursorLine + 1; // Conversion en base 1 pour correspondre à bookmark.line
+        return this.getForFile(filePath).find(b => b.line === line);
+    }
+
+    /**
+     * Met à jour un signet existant sur une ligne donnée sans recréer son ID ou sa date de création
+     */
+    public updateBookmark(
+        filePath: string,
+        cursorLine: number,
+        updates: {
+            symbol?: SymbolInfo;
+            title?: string;
+            comment?: string;
+            tag?: string;
+            highlightRange?: { startLine: number; endLine: number };
+        }
+    ): Bookmark | null {
+        const bookmark = this.getBookmark(filePath, cursorLine);
+        if (!bookmark) {
+            return null;
+        }
+
+        if (updates.symbol) {
+            bookmark.symbolName = updates.symbol.name;
+            bookmark.symbolKind = updates.symbol.kind;
+        }
+        if (updates.title !== undefined) {
+            bookmark.title = updates.title;
+        }
+        if (updates.comment !== undefined) {
+            bookmark.comment = updates.comment;
+        }
+        if (updates.tag !== undefined) {
+            bookmark.tag = updates.tag;
+        }
+        if (updates.highlightRange !== undefined) {
+            bookmark.highlightRange = updates.highlightRange;
+        }
+
+        bookmark.updatedAt = Date.now();
+        this.notifyAndSave();
+        return bookmark;
+    }
+
     public toggle(
         symbol: SymbolInfo,
         filePath: string,
