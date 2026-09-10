@@ -1,0 +1,22 @@
+{
+  "extension.displayName": "Smart Bookmarks",
+  "extension.description": "Bookmarks that follow your code symbols, not line numbers",
+  "viewsContainers.smartBookmarksContainer": "Smart Bookmarks",
+  "views.smartBookmarksView": "Smart Bookmarks",
+  "command.addBookmark": "Add/Remove Bookmark",
+  "command.nextBookmark": "Next Bookmark",
+  "command.previousBookmark": "Previous Bookmark",
+  "command.listBookmarks": "List All Bookmarks",
+  "command.clearAllBookmarks": "Clear All Bookmarks",
+  "command.clearFileBookmarks": "Clear Bookmarks in Active File",
+  "command.deleteSingleBookmark": "Delete this bookmark",
+  "command.deleteFileBookmarksFromTree": "Delete all bookmarks for this file",
+  "command.addBookmarkWithComment": "Add bookmark with notes",
+  "command.renameBookmark": "Rename bookmark",
+  "config.persistBookmarks": "Persist bookmarks between sessions",
+  "config.autoFollowSymbols": "Automatically update bookmark positions when symbols are renamed/moved",
+  "config.tags.description": "List of available tags for bookmarks",
+  "config.tags.label.description": "Tag name (e.g. FIXME)",
+  "config.tags.icon.description": "VS Code Codicon identifier (e.g. alert, bug, bookmark) or an emoji",
+  "config.tags.itemDescription.description": "Short explanatory description"
+}

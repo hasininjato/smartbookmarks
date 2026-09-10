@@ -1,0 +1,22 @@
+{
+  "extension.displayName": "Smart Bookmarks",
+  "extension.description": "Des signets qui suivent vos symboles de code et non les numéros de ligne",
+  "viewsContainers.smartBookmarksContainer": "Smart Bookmarks",
+  "views.smartBookmarksView": "Smart Bookmarks",
+  "command.addBookmark": "Ajouter/Supprimer le signet",
+  "command.nextBookmark": "Signet suivant",
+  "command.previousBookmark": "Signet précédent",
+  "command.listBookmarks": "Lister tous les signets",
+  "command.clearAllBookmarks": "Effacer tous les signets",
+  "command.clearFileBookmarks": "Effacer les signets du fichier actif",
+  "command.deleteSingleBookmark": "Supprimer ce signet",
+  "command.deleteFileBookmarksFromTree": "Supprimer tous les signets de ce fichier",
+  "command.addBookmarkWithComment": "Ajouter un signet avec notes",
+  "command.renameBookmark": "Renommer le signet",
+  "config.persistBookmarks": "Conserver les signets entre les sessions",
+  "config.autoFollowSymbols": "Mettre à jour automatiquement la position des signets si les symboles sont renommés ou déplacés",
+  "config.tags.description": "Liste des tags disponibles pour les signets",
+  "config.tags.label.description": "Nom du tag (ex : FIXME)",
+  "config.tags.icon.description": "Identifiant de l'icône VS Code Codicon (ex : alert, bug, bookmark) ou un emoji",
+  "config.tags.itemDescription.description": "Courte description explicative"
+}
