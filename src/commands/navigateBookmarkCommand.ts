@@ -12,7 +12,7 @@ export class NavigateBookmarkCommand {
     async execute(): Promise<void> {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showErrorMessage('No active editor');
+            vscode.window.showErrorMessage(vscode.l10n.t('No active editor'));
             return;
         }
 
@@ -24,7 +24,7 @@ export class NavigateBookmarkCommand {
             : this.provider.getPrevious(position, filePath);
 
         if (!bookmark) {
-            vscode.window.showInformationMessage('No bookmarks in this file');
+            vscode.window.showInformationMessage(vscode.l10n.t('No bookmarks in this file'));
             return;
         }
 

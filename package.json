@@ -4,6 +4,7 @@
   "description": "%extension.description%",
   "version": "0.0.1",
   "license": "MIT",
+  "l10n": "./l10n",
   "engines": {
     "vscode": "^1.80.0"
   },

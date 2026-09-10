@@ -1,47 +1,50 @@
-// Catalogue exhaustif d'icônes Codicon de VS Code classées
-export const EXTENDED_PRESET_ICONS: { label: string; description: string }[] = [
-    // 🛠️ Développement & Code
-    { label: '$(bug) bug', description: 'Bugs, anomalies' },
-    { label: '$(code) code', description: 'Extrait de code, fonction' },
-    { label: '$(tools) tools', description: 'Outillage, refactoring, helpers' },
-    { label: '$(terminal) terminal', description: 'Commandes, scripts shell' },
-    { label: '$(gear) gear', description: 'Configuration, paramètres' },
-    { label: '$(symbol-keyword) symbol-keyword', description: 'Logique métier, algorithme' },
-    { label: '$(symbol-class) symbol-class', description: 'Composant, classe' },
-    { label: '$(database) database', description: 'Requête BDD, modèle de données' },
-    { label: '$(git-merge) git-merge', description: 'Branchement Git, fusion' },
-    { label: '$(bracket) bracket', description: 'Structure, crochets' },
+import * as vscode from 'vscode';
 
-    // 🛡️ Sécurité & Performance
-    { label: '$(shield) shield', description: 'Sécurité, authentification, tokens' },
-    { label: '$(lock) lock', description: 'Permissions, accès restreint' },
-    { label: '$(key) key', description: 'Clés API, secrets' },
-    { label: '$(pulse) pulse', description: 'Monitoring, métriques, santé' },
-    { label: '$(flame) flame', description: 'Urgence maximale, hotfix' },
+export function getExtendedPresetIcons(): { label: string; description: string }[] {
+    return [
+        // 🛠️ Développement & Code
+        { label: '$(bug) bug', description: vscode.l10n.t('Bugs, anomalies') },
+        { label: '$(code) code', description: vscode.l10n.t('Code snippet, function') },
+        { label: '$(tools) tools', description: vscode.l10n.t('Tooling, refactoring, helpers') },
+        { label: '$(terminal) terminal', description: vscode.l10n.t('Commands, shell scripts') },
+        { label: '$(gear) gear', description: vscode.l10n.t('Configuration, settings') },
+        { label: '$(symbol-keyword) symbol-keyword', description: vscode.l10n.t('Business logic, algorithm') },
+        { label: '$(symbol-class) symbol-class', description: vscode.l10n.t('Component, class') },
+        { label: '$(database) database', description: vscode.l10n.t('DB query, data model') },
+        { label: '$(git-merge) git-merge', description: vscode.l10n.t('Git branching, merge') },
+        { label: '$(bracket) bracket', description: vscode.l10n.t('Structure, brackets') },
 
-    // 📋 Organisation & Tâches
-    { label: '$(checklist) checklist', description: 'Tâches, TODOs, vérifications' },
-    { label: '$(notebook) notebook', description: 'Notes de documentation' },
-    { label: '$(eye) eye', description: 'À réviser, Code Review' },
-    { label: '$(pin) pin', description: 'Épinglé, référence importante' },
-    { label: '$(target) target', description: 'Objectif, étape clé' },
-    { label: '$(bookmark) bookmark', description: 'Signet standard' },
-    { label: '$(tag) tag', description: 'Étiquette standard' },
+        // 🛡️ Sécurité & Performance
+        { label: '$(shield) shield', description: vscode.l10n.t('Security, authentication, tokens') },
+        { label: '$(lock) lock', description: vscode.l10n.t('Permissions, restricted access') },
+        { label: '$(key) key', description: vscode.l10n.t('API keys, secrets') },
+        { label: '$(pulse) pulse', description: vscode.l10n.t('Monitoring, metrics, health') },
+        { label: '$(flame) flame', description: vscode.l10n.t('High urgency, hotfix') },
 
-    // ⚠️ Statuts & Alertes
-    { label: '$(star) star', description: 'Important, favori' },
-    { label: '$(alert) alert', description: 'Avertissement, attention' },
-    { label: '$(warning) warning', description: 'Point critique' },
-    { label: '$(info) info', description: 'Information complémentaire' },
-    { label: '$(verified) verified', description: 'Validé, vérifié' },
-    { label: '$(pass) pass', description: 'Succès, test validé' },
+        // 📋 Organisation & Tâches
+        { label: '$(checklist) checklist', description: vscode.l10n.t('Tasks, TODOs, checks') },
+        { label: '$(notebook) notebook', description: vscode.l10n.t('Documentation notes') },
+        { label: '$(eye) eye', description: vscode.l10n.t('To review, Code Review') },
+        { label: '$(pin) pin', description: vscode.l10n.t('Pinned, important reference') },
+        { label: '$(target) target', description: vscode.l10n.t('Goal, key milestone') },
+        { label: '$(bookmark) bookmark', description: vscode.l10n.t('Standard bookmark') },
+        { label: '$(tag) tag', description: vscode.l10n.t('Standard tag') },
 
-    // 🎨 Interface & UI
-    { label: '$(heart) heart', description: 'Coup de cœur, UI/UX' },
-    { label: '$(paintcan) paintcan', description: 'Design, styles, CSS' },
-    { label: '$(lightbulb) lightbulb', description: 'Idée, proposition' },
-    { label: '$(globe) globe', description: 'Réseau, API, Web, i18n' },
-    { label: '$(cloud) cloud', description: 'Services Cloud, Serverless' },
-    { label: '$(server) server', description: 'Serveur, Backend' },
-    { label: '$(bell) bell', description: 'Notifications, événements' }
-];
+        // ⚠️ Statuts & Alertes
+        { label: '$(star) star', description: vscode.l10n.t('Important, favorite') },
+        { label: '$(alert) alert', description: vscode.l10n.t('Warning, attention') },
+        { label: '$(warning) warning', description: vscode.l10n.t('Critical point') },
+        { label: '$(info) info', description: vscode.l10n.t('Additional information') },
+        { label: '$(verified) verified', description: vscode.l10n.t('Validated, verified') },
+        { label: '$(pass) pass', description: vscode.l10n.t('Success, test passed') },
+
+        // 🎨 Interface & UI
+        { label: '$(heart) heart', description: vscode.l10n.t('Highlight, UI/UX') },
+        { label: '$(paintcan) paintcan', description: vscode.l10n.t('Design, styles, CSS') },
+        { label: '$(lightbulb) lightbulb', description: vscode.l10n.t('Idea, proposal') },
+        { label: '$(globe) globe', description: vscode.l10n.t('Network, API, Web, i18n') },
+        { label: '$(cloud) cloud', description: vscode.l10n.t('Cloud services, Serverless') },
+        { label: '$(server) server', description: vscode.l10n.t('Server, Backend') },
+        { label: '$(bell) bell', description: vscode.l10n.t('Notifications, events') }
+    ];
+}

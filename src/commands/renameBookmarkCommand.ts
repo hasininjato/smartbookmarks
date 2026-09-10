@@ -19,16 +19,14 @@ export class RenameBookmarkCommand {
         }
 
         if (!targetBookmark) {
-            vscode.window.showWarningMessage("Veuillez sélectionner un signet (et non un dossier/fichier) à renommer.");
-            return;
-        }
-
-        if (!targetBookmark) {
+            vscode.window.showWarningMessage(
+                vscode.l10n.t("Please select a bookmark (not a file/folder) to rename.")
+            );
             return;
         }
 
         const newTitle = await vscode.window.showInputBox({
-            prompt: 'Nouveau titre pour le signet',
+            prompt: vscode.l10n.t('New title for the bookmark'),
             value: targetBookmark.title || targetBookmark.symbolName
         });
 

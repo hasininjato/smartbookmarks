@@ -9,7 +9,7 @@ export class ClearFileBookmarksCommand {
     async execute(): Promise<void> {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showWarningMessage('No active editor found');
+            vscode.window.showWarningMessage(vscode.l10n.t('No active editor found.'));
             return;
         }
 
@@ -17,19 +17,24 @@ export class ClearFileBookmarksCommand {
         const fileBookmarks = this.provider.getForFile(filePath);
 
         if (fileBookmarks.length === 0) {
-            vscode.window.showInformationMessage('No bookmarks to clear in this file');
+            vscode.window.showInformationMessage(vscode.l10n.t('No bookmarks to clear in this file.'));
             return;
         }
 
+        const clearLabel = vscode.l10n.t('Clear');
+        const confirmMessage = fileBookmarks.length > 1
+            ? vscode.l10n.t('Clear {0} bookmarks in active file?', fileBookmarks.length)
+            : vscode.l10n.t('Clear {0} bookmark in active file?', fileBookmarks.length);
+
         const answer = await vscode.window.showWarningMessage(
-            `Clear ${fileBookmarks.length} bookmark(s) in active file?`,
+            confirmMessage,
             { modal: true },
-            'Clear'
+            clearLabel
         );
 
-        if (answer === 'Clear') {
+        if (answer === clearLabel) {
             this.provider.clearForFile(filePath);
-            vscode.window.showInformationMessage('Bookmarks in active file cleared');
+            vscode.window.showInformationMessage(vscode.l10n.t('Bookmarks in active file cleared.'));
         }
     }
 }

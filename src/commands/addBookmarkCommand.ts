@@ -10,7 +10,7 @@ export class AddBookmarkCommand {
     async execute(): Promise<void> {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showErrorMessage('Aucun éditeur actif');
+            vscode.window.showErrorMessage(vscode.l10n.t('No active editor'));
             return;
         }
 
@@ -26,12 +26,12 @@ export class AddBookmarkCommand {
         const lineRange = new vscode.Range(startLine, 0, startLine, 0);
 
         const symbolInfo = symbol ? {
-            name: `${symbol.name} (Ligne ${startLine + 1})`,
+            name: `${symbol.name} (${vscode.l10n.t('Line {0}', startLine + 1)})`,
             kind: symbol.kind,
             range: lineRange,
             selectionRange: lineRange
         } : {
-            name: `Ligne ${startLine + 1}`,
+            name: vscode.l10n.t('Line {0}', startLine + 1),
             kind: vscode.SymbolKind.Null,
             range: lineRange,
             selectionRange: lineRange
@@ -46,14 +46,10 @@ export class AddBookmarkCommand {
             };
         }
 
-        // Ancre textuelle : contenu de la ligne au moment de la création du signet,
-        // utilisée pour retrouver le signet si sa ligne est supprimée puis restaurée
-        // (undo) ou déplacée manuellement ailleurs dans le fichier.
+        // Ancre textuelle : contenu de la ligne au moment de la création du signet
         const lineText = document.lineAt(startLine).text;
 
-        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus.
-        // Nécessaire quand lineText seul correspond à plusieurs lignes du fichier
-        // (ex: du code répétitif comme deux endpoints avec une ligne identique).
+        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus
         const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
 
         const bookmark = this.provider.toggle(
@@ -66,9 +62,9 @@ export class AddBookmarkCommand {
         );
 
         if (bookmark) {
-            vscode.window.showInformationMessage(`📌 Signet ajouté : ${symbolInfo.name}`);
+            vscode.window.showInformationMessage(vscode.l10n.t('📌 Bookmark added: {0}', symbolInfo.name));
         } else {
-            vscode.window.showInformationMessage(`🗑️ Signet supprimé (Ligne ${startLine + 1})`);
+            vscode.window.showInformationMessage(vscode.l10n.t('🗑️ Bookmark removed (Line {0})', startLine + 1));
         }
     }
 }

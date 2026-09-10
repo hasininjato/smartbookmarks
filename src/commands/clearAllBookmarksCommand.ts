@@ -9,19 +9,24 @@ export class ClearAllBookmarksCommand {
     async execute(): Promise<void> {
         const bookmarks = this.provider.getBookmarks();
         if (bookmarks.length === 0) {
-            vscode.window.showInformationMessage('No bookmarks to clear');
+            vscode.window.showInformationMessage(vscode.l10n.t('No bookmarks to clear.'));
             return;
         }
 
+        const clearLabel = vscode.l10n.t('Clear');
+        const confirmMessage = bookmarks.length > 1
+            ? vscode.l10n.t('Are you sure you want to clear all {0} bookmarks?', bookmarks.length)
+            : vscode.l10n.t('Are you sure you want to clear this bookmark?');
+
         const answer = await vscode.window.showWarningMessage(
-            `Clear all ${bookmarks.length} bookmarks?`,
+            confirmMessage,
             { modal: true },
-            'Clear'
+            clearLabel
         );
 
-        if (answer === 'Clear') {
+        if (answer === clearLabel) {
             this.provider.clear();
-            vscode.window.showInformationMessage('All bookmarks cleared');
+            vscode.window.showInformationMessage(vscode.l10n.t('All bookmarks cleared.'));
         }
     }
 }

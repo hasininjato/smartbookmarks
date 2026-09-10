@@ -25,15 +25,15 @@ export class BookmarkTreeItem extends vscode.TreeItem {
 
             this.label = `${tagStr}${titleStr}${noteStr}`;
 
-            const author = bookmark.author || 'Unknown';
+            const author = bookmark.author || vscode.l10n.t('Unknown');
             const dateStr = bookmark.createdDateFormatted
-                || (bookmark.createdAt ? new Date(bookmark.createdAt).toLocaleString('fr-FR') : 'Unknown date');
+                || (bookmark.createdAt ? new Date(bookmark.createdAt).toLocaleString(vscode.env.language) : vscode.l10n.t('Unknown date'));
 
             const hasRange = bookmark.highlightRange && bookmark.highlightRange.startLine !== bookmark.highlightRange.endLine;
 
             this.description = hasRange
-                ? `Lines ${bookmark.highlightRange!.startLine + 1} → ${bookmark.highlightRange!.endLine + 1}`
-                : `Line ${bookmark.line}`;
+                ? vscode.l10n.t('Lines {0} → {1}', bookmark.highlightRange!.startLine + 1, bookmark.highlightRange!.endLine + 1)
+                : vscode.l10n.t('Line {0}', bookmark.line);
 
             // Récupération de la configuration du tag s'il existe
             const config = vscode.workspace.getConfiguration('smartbookmarks');
@@ -81,12 +81,17 @@ export class BookmarkTreeItem extends vscode.TreeItem {
             }
 
             // Section 3 : Auteur, Date et Lignes
-            htmlContent += `👤 **Auteur :** ${author} &nbsp;|&nbsp; 📅 **Date :** ${dateStr}\n\n`;
+            const authorLabel = vscode.l10n.t('Author');
+            const dateLabel = vscode.l10n.t('Date');
+            htmlContent += `👤 **${authorLabel} :** ${author} &nbsp;|&nbsp; 📅 **${dateLabel} :** ${dateStr}\n\n`;
 
             if (hasRange) {
-                htmlContent += `📏 **Lignes :** ${bookmark.highlightRange!.startLine + 1} à ${bookmark.highlightRange!.endLine + 1}`;
+                const linesLabel = vscode.l10n.t('Lines');
+                const toLabel = vscode.l10n.t('to');
+                htmlContent += `📏 **${linesLabel} :** ${bookmark.highlightRange!.startLine + 1} ${toLabel} ${bookmark.highlightRange!.endLine + 1}`;
             } else {
-                htmlContent += `📍 **Ligne :** ${bookmark.line}`;
+                const lineLabel = vscode.l10n.t('Line');
+                htmlContent += `📍 **${lineLabel} :** ${bookmark.line}`;
             }
 
             tooltipMarkdown.appendMarkdown(htmlContent);
@@ -97,7 +102,7 @@ export class BookmarkTreeItem extends vscode.TreeItem {
 
             this.command = {
                 command: 'vscode.open',
-                title: 'Ouvrir le signet',
+                title: vscode.l10n.t('Open bookmark'),
                 arguments: [
                     vscode.Uri.file(bookmark.filePath),
                     {
