@@ -22,7 +22,7 @@ let statusBarProvider: BookmarkStatusBarProvider;
 export function activate(context: vscode.ExtensionContext): void {
   provider = new BookmarkProvider(context);
   tracker = new SymbolTracker(provider);
-  decorationProvider = new BookmarkDecorationProvider(provider);
+  decorationProvider = new BookmarkDecorationProvider(provider, context);
   treeViewProvider = new BookmarkTreeViewProvider(provider);
   statusBarProvider = new BookmarkStatusBarProvider(provider);
 
@@ -46,15 +46,19 @@ export function activate(context: vscode.ExtensionContext): void {
     const totalBookmarks = provider.getBookmarks().length;
 
     if (totalBookmarks > 0) {
+      const formattedCount = totalBookmarks > 1
+        ? vscode.l10n.t('{0} bookmarks', totalBookmarks)
+        : vscode.l10n.t('{0} bookmark', totalBookmarks);
+
       // 1. Le badge numéroté sur l'icône de la barre d'activités
       treeView.badge = {
         value: totalBookmarks,
-        tooltip: `${totalBookmarks} bookmark${totalBookmarks > 1 ? 's' : ''}`
+        tooltip: formattedCount
       };
 
       // 2. Définit le titre et le sous-titre pour former "Smart Bookmarks — N bookmarks"
       treeView.title = 'Smart Bookmarks';
-      treeView.description = `— ${totalBookmarks} bookmark${totalBookmarks > 1 ? 's' : ''}`;
+      treeView.description = `– ${formattedCount}`;
     } else {
       treeView.badge = undefined;
       treeView.title = 'Smart Bookmarks';
@@ -95,13 +99,14 @@ export function activate(context: vscode.ExtensionContext): void {
       if (node?.filePath) {
         const count = provider.getForFile(node.filePath).length;
 
+        const deleteLabel = vscode.l10n.t('Delete');
         const answer = await vscode.window.showWarningMessage(
-          `Voulez-vous vraiment supprimer les ${count} signet(s) de ce fichier ?`,
+          vscode.l10n.t('Are you sure you want to delete {0} bookmark(s) from this file?', count),
           { modal: true },
-          'Supprimer'
+          deleteLabel
         );
 
-        if (answer === 'Supprimer') {
+        if (answer === deleteLabel) {
           provider.clearForFile(node.filePath);
         }
       }
@@ -113,7 +118,7 @@ export function activate(context: vscode.ExtensionContext): void {
     statusBarProvider
   );
 
-  vscode.window.showInformationMessage('📚 Smart Bookmarks ready!');
+  vscode.window.showInformationMessage(vscode.l10n.t('📚 Smart Bookmarks ready!'));
 }
 
 export function deactivate(): void { }

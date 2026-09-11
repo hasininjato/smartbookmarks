@@ -60,7 +60,7 @@ export class SymbolTracker implements vscode.Disposable {
                     // FIX: vérifie que item.range existe
                     if (item.range) {
                         result.push({
-                            name: item.name || 'unknown',
+                            name: item.name || vscode.l10n.t('Unknown'),
                             kind: item.kind || 0,
                             range: item.range,
                             selectionRange: item.selectionRange || item.range

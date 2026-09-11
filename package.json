@@ -1,8 +1,10 @@
 {
   "name": "smartbookmarks",
-  "displayName": "Smart Bookmarks",
-  "description": "Bookmarks that follow your code symbols, not line numbers",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
   "version": "0.0.1",
+  "license": "MIT",
+  "l10n": "./l10n",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -18,7 +20,7 @@
       "activitybar": [
         {
           "id": "smartBookmarksContainer",
-          "title": "Smart Bookmarks",
+          "title": "%viewsContainers.smartBookmarksContainer%",
           "icon": "$(bookmark)"
         }
       ]
@@ -27,7 +29,7 @@
       "smartBookmarksContainer": [
         {
           "id": "smartBookmarksView",
-          "name": "Smart Bookmarks",
+          "name": "%views.smartBookmarksView%",
           "icon": "$(bookmark)"
         }
       ]
@@ -35,52 +37,52 @@
     "commands": [
       {
         "command": "smartbookmarks.addBookmark",
-        "title": "Smart Bookmark: Add/Remove Bookmark",
+        "title": "%command.addBookmark%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.nextBookmark",
-        "title": "Smart Bookmark: Next Bookmark",
+        "title": "%command.nextBookmark%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.previousBookmark",
-        "title": "Smart Bookmark: Previous Bookmark",
+        "title": "%command.previousBookmark%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.listBookmarks",
-        "title": "Smart Bookmark: List All Bookmarks",
+        "title": "%command.listBookmarks%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.clearAllBookmarks",
-        "title": "Smart Bookmark: Clear All Bookmarks",
+        "title": "%command.clearAllBookmarks%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.clearFileBookmarks",
-        "title": "Smart Bookmark: Clear Bookmarks in Active File",
+        "title": "%command.clearFileBookmarks%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.deleteSingleBookmark",
-        "title": "Delete this bookmark",
+        "title": "%command.deleteSingleBookmark%",
         "icon": "$(trash)"
       },
       {
         "command": "smartbookmarks.deleteFileBookmarksFromTree",
-        "title": "Delete all bookmarks for this file",
+        "title": "%command.deleteFileBookmarksFromTree%",
         "icon": "$(trash)"
       },
       {
         "command": "smartbookmarks.addBookmarkWithComment",
-        "title": "Smart Bookmark: Add bookmark with notes",
+        "title": "%command.addBookmarkWithComment%",
         "category": "Smart Bookmarks"
       },
       {
         "command": "smartbookmarks.renameBookmark",
-        "title": "Renommer le signet",
+        "title": "%command.renameBookmark%",
         "category": "Smart Bookmarks",
         "icon": "$(edit)"
       }
@@ -129,30 +131,30 @@
         "smartbookmarks.persistBookmarks": {
           "type": "boolean",
           "default": true,
-          "description": "Persist bookmarks between sessions"
+          "description": "%config.persistBookmarks%"
         },
         "smartbookmarks.autoFollowSymbols": {
           "type": "boolean",
           "default": true,
-          "description": "Automatically update bookmark positions when symbols are renamed/moved"
+          "description": "%config.autoFollowSymbols%"
         },
         "smartbookmarks.tags": {
           "type": "array",
-          "description": "Liste des tags disponibles pour les signets",
+          "description": "%config.tags.description%",
           "items": {
             "type": "object",
             "properties": {
               "label": {
                 "type": "string",
-                "description": "Nom du tag (ex: FIXME)"
+                "description": "%config.tags.label.description%"
               },
               "icon": {
                 "type": "string",
-                "description": "Identifiant de l'icône VS Code Codex (ex: alert, bug, bookmark) ou un emoji"
+                "description": "%config.tags.icon.description%"
               },
               "description": {
                 "type": "string",
-                "description": "Courte description explicative"
+                "description": "%config.tags.itemDescription.description%"
               }
             },
             "required": [
@@ -184,11 +186,6 @@
               "label": "REVIEW",
               "icon": "eye",
               "description": "Nécessite une revue de code"
-            },
-            {
-              "label": "OPTIM",
-              "icon": "zap",
-              "description": "Amélioration de performance"
             }
           ]
         }
@@ -229,18 +226,19 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.134.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "24.x",
-    "typescript-eslint": "^8.61.1",
-    "eslint": "^10.5.0",
+    "@types/vscode": "^1.134.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
     "esbuild": "^0.28.1",
+    "eslint": "^10.5.0",
     "npm-run-all": "^4.1.5",
     "typescript": "^6.0.3",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0"
+    "typescript-eslint": "^8.61.1"
   },
   "dependencies": {
+    "@vscode/codicons": "^0.0.46-24",
     "web-tree-sitter": "^0.20.8"
   },
   "overrides": {

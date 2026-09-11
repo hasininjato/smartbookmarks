@@ -11,7 +11,12 @@ export class BookmarkStatusBarProvider implements vscode.Disposable {
             100
         );
         this.statusBarItem.command = 'smartbookmarks.listBookmarks';
-        this.statusBarItem.tooltip = 'Smart Bookmarks';
+
+        const totalBookmarks = this.provider.getBookmarks().length;
+        const totalFormatted = totalBookmarks > 1
+            ? vscode.l10n.t('{0} bookmarks', totalBookmarks)
+            : vscode.l10n.t('{0} bookmark', totalBookmarks);
+        this.statusBarItem.tooltip = `Smart Bookmarks – ${totalFormatted}`;
 
         this.disposables.push(
             this.statusBarItem,
@@ -37,7 +42,12 @@ export class BookmarkStatusBarProvider implements vscode.Disposable {
             return;
         }
 
+        const formattedCount = count > 1
+            ? vscode.l10n.t('{0} bookmarks', count)
+            : vscode.l10n.t('{0} bookmark', count);
+
         this.statusBarItem.text = `$(bookmark) ${count}`;
+        this.statusBarItem.tooltip = `Smart Bookmarks – ${formattedCount}`;
         this.statusBarItem.show();
     }
 

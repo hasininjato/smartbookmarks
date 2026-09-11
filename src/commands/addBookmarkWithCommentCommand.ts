@@ -1,60 +1,13 @@
 import * as vscode from 'vscode';
 import { BookmarkProvider } from '../providers/bookmarkProvider';
-import { BookmarkTagConfig, SymbolInfo } from '../types';
+import { Bookmark, BookmarkTagConfig, SymbolInfo } from '../types';
 import { getSymbolAtPosition } from '../utils/symbols';
-
-// Catalogue exhaustif d'icônes Codicon de VS Code classées
-const EXTENDED_PRESET_ICONS: { label: string; description: string }[] = [
-    // 🛠️ Développement & Code
-    { label: '$(bug) bug', description: 'Bugs, anomalies' },
-    { label: '$(code) code', description: 'Extrait de code, fonction' },
-    { label: '$(tools) tools', description: 'Outillage, refactoring, helpers' },
-    { label: '$(terminal) terminal', description: 'Commandes, scripts shell' },
-    { label: '$(gear) gear', description: 'Configuration, paramètres' },
-    { label: '$(symbol-keyword) symbol-keyword', description: 'Logique métier, algorithme' },
-    { label: '$(symbol-class) symbol-class', description: 'Composant, classe' },
-    { label: '$(database) database', description: 'Requête BDD, modèle de données' },
-    { label: '$(git-merge) git-merge', description: 'Branchement Git, fusion' },
-    { label: '$(bracket) bracket', description: 'Structure, crochets' },
-
-    // 🛡️ Sécurité & Performance
-    { label: '$(shield) shield', description: 'Sécurité, authentification, tokens' },
-    { label: '$(lock) lock', description: 'Permissions, accès restreint' },
-    { label: '$(key) key', description: 'Clés API, secrets' },
-    { label: '$(zap) zap', description: 'Performance, optimisation' },
-    { label: '$(pulse) pulse', description: 'Monitoring, métriques, santé' },
-    { label: '$(flame) flame', description: 'Urgence maximale, hotfix' },
-
-    // 📋 Organisation & Tâches
-    { label: '$(checklist) checklist', description: 'Tâches, TODOs, vérifications' },
-    { label: '$(notebook) notebook', description: 'Notes de documentation' },
-    { label: '$(eye) eye', description: 'À réviser, Code Review' },
-    { label: '$(pin) pin', description: 'Épinglé, référence importante' },
-    { label: '$(target) target', description: 'Objectif, étape clé' },
-    { label: '$(bookmark) bookmark', description: 'Signet standard' },
-    { label: '$(tag) tag', description: 'Étiquette standard' },
-
-    // ⚠️ Statuts & Alertes
-    { label: '$(star) star', description: 'Important, favori' },
-    { label: '$(alert) alert', description: 'Avertissement, attention' },
-    { label: '$(warning) warning', description: 'Point critique' },
-    { label: '$(info) info', description: 'Information complémentaire' },
-    { label: '$(verified) verified', description: 'Validé, vérifié' },
-    { label: '$(pass) pass', description: 'Succès, test validé' },
-
-    // 🎨 Interface & UI
-    { label: '$(heart) heart', description: 'Coup de cœur, UI/UX' },
-    { label: '$(paintcan) paintcan', description: 'Design, styles, CSS' },
-    { label: '$(lightbulb) lightbulb', description: 'Idée, proposition' },
-    { label: '$(globe) globe', description: 'Réseau, API, Web, i18n' },
-    { label: '$(cloud) cloud', description: 'Services Cloud, Serverless' },
-    { label: '$(server) server', description: 'Serveur, Backend' },
-    { label: '$(bell) bell', description: 'Notifications, événements' }
-];
+import { getExtendedPresetIcons } from '../utils/codicon';
 
 interface TagQuickPickItem extends vscode.QuickPickItem {
     rawTag?: BookmarkTagConfig;
     isCreateAction?: boolean;
+    isNoTagAction?: boolean;
 }
 
 export class AddBookmarkWithCommentCommand {
@@ -65,7 +18,7 @@ export class AddBookmarkWithCommentCommand {
     async execute(): Promise<void> {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showWarningMessage('Aucun éditeur de texte actif.');
+            vscode.window.showWarningMessage(vscode.l10n.t('No active text editor.'));
             return;
         }
 
@@ -75,22 +28,26 @@ export class AddBookmarkWithCommentCommand {
         const startLine = selection.start.line;
         const endLine = selection.end.line;
 
+        // 0. Vérification si un signet existe déjà
+        const existingBookmark: Bookmark | undefined = this.provider.getBookmark(filePath, startLine);
+        const isEditing = !!existingBookmark;
+
         const detectedSymbol = await getSymbolAtPosition(document, selection.start);
         const lineRange = new vscode.Range(startLine, 0, startLine, 0);
 
         const symbol: SymbolInfo = detectedSymbol ? {
-            name: `${detectedSymbol.name} (Ligne ${startLine + 1})`,
+            name: `${detectedSymbol.name} (${vscode.l10n.t('Line {0}', startLine + 1)})`,
             kind: detectedSymbol.kind,
             range: lineRange,
             selectionRange: lineRange
         } : {
-            name: `Ligne ${startLine + 1}`,
+            name: vscode.l10n.t('Line {0}', startLine + 1),
             kind: vscode.SymbolKind.Null,
             range: lineRange,
             selectionRange: lineRange
         };
 
-        let highlightRange: { startLine: number; endLine: number } | undefined = undefined;
+        let highlightRange: { startLine: number; endLine: number } | undefined = existingBookmark?.highlightRange;
         if (endLine > startLine) {
             highlightRange = {
                 startLine: startLine,
@@ -98,25 +55,20 @@ export class AddBookmarkWithCommentCommand {
             };
         }
 
-        // Ancre textuelle : contenu de la ligne au moment de la création du signet,
-        // utilisée pour retrouver le signet si sa ligne est supprimée puis restaurée
-        // (undo) ou déplacée manuellement ailleurs dans le fichier.
         const lineText = document.lineAt(startLine).text;
-
-        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus.
-        // Nécessaire quand lineText seul correspond à plusieurs lignes du fichier
-        // (ex: du code répétitif comme deux endpoints avec une ligne identique).
         const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
 
-        // 1. Sélection / Suppression de Tag
-        const selectedTagItem = await this.showTagQuickPickWithDelete();
+        // 1. Sélection / Édition / Suppression du Tag
+        const selectedTagItem = await this.showTagQuickPickWithActions(existingBookmark?.tag);
         if (!selectedTagItem) { return; }
 
         let selectedTagLabel: string | undefined = undefined;
 
-        if (selectedTagItem.isCreateAction) {
+        if (selectedTagItem.isNoTagAction) {
+            selectedTagLabel = undefined;
+        } else if (selectedTagItem.isCreateAction) {
             const rawTagName = await vscode.window.showInputBox({
-                prompt: 'Nom du nouveau tag (ex: SECURITY, OPTIM, REFAC)',
+                prompt: vscode.l10n.t('New tag name (e.g. SECURITY, OPTIM, REFAC)'),
                 placeHolder: 'SECURITY',
                 ignoreFocusOut: true
             });
@@ -127,20 +79,18 @@ export class AddBookmarkWithCommentCommand {
             const config = vscode.workspace.getConfiguration('smartbookmarks');
             let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
 
-            // Vérification si le tag existe déjà
             const existingTag = userTags.find(t => t.label.toUpperCase() === formattedTagName);
 
             if (existingTag) {
-                vscode.window.showInformationMessage(`Le tag "${formattedTagName}" existe déjà. Il a été sélectionné.`);
+                vscode.window.showInformationMessage(vscode.l10n.t('Tag "{0}" already exists. It has been selected.', formattedTagName));
                 selectedTagLabel = existingTag.label;
             } else {
-                // Choix d'icône avec filtrage visuel
                 const selectedIcon = await this.showIconPicker();
                 if (!selectedIcon) { return; }
 
                 const newTagDesc = await vscode.window.showInputBox({
-                    prompt: 'Description optionnelle du tag',
-                    placeHolder: 'Remarque relative à la sécurité',
+                    prompt: vscode.l10n.t('Optional tag description'),
+                    placeHolder: vscode.l10n.t('Security note'),
                     ignoreFocusOut: true
                 });
 
@@ -161,8 +111,9 @@ export class AddBookmarkWithCommentCommand {
 
         // 2. Titre
         const rawTitle = await vscode.window.showInputBox({
-            prompt: 'Entrez un titre pour ce signet',
-            placeHolder: 'Ex: Vérification des droits d\'accès',
+            prompt: isEditing ? vscode.l10n.t('Edit bookmark title') : vscode.l10n.t('Enter a title for this bookmark'),
+            value: existingBookmark?.title || '',
+            placeHolder: vscode.l10n.t('E.g. Access rights check'),
             ignoreFocusOut: true
         });
 
@@ -170,33 +121,198 @@ export class AddBookmarkWithCommentCommand {
         const cleanTitle = rawTitle.trim().length > 0 ? rawTitle.trim() : undefined;
 
         // 3. Commentaire
-        const rawComment = await this.askMultilineComment();
+        const rawComment = await this.askMultilineComment(existingBookmark?.comment);
+        if (rawComment === false) { return; }
         const cleanComment = rawComment && rawComment.trim().length > 0 ? rawComment.trim() : undefined;
 
-        // 4. Envoi au Provider
-        this.provider.toggle(
-            symbol,
-            filePath,
-            startLine,
-            lineText,
-            lineTextContext,
-            highlightRange,
-            cleanComment,
-            selectedTagLabel,
-            cleanTitle
-        );
+        // 4. Sauvegarde
+        if (isEditing) {
+            this.provider.updateBookmark(filePath, startLine, {
+                symbol,
+                title: cleanTitle,
+                comment: cleanComment,
+                tag: selectedTagLabel,
+                highlightRange
+            });
+            vscode.window.showInformationMessage(vscode.l10n.t('Bookmark updated at line {0}.', startLine + 1));
+        } else {
+            const bookmark = this.provider.toggle(
+                symbol,
+                filePath,
+                startLine,
+                lineText,
+                lineTextContext,
+                highlightRange,
+                cleanComment,
+                selectedTagLabel,
+                cleanTitle
+            );
+
+            if (bookmark) {
+                vscode.window.showInformationMessage(vscode.l10n.t('📌 Bookmark added: {0}', symbol.name));
+            } else {
+                vscode.window.showInformationMessage(vscode.l10n.t('🗑️ Bookmark removed (Line {0})', startLine + 1));
+            }
+        }
     }
 
-    /**
-     * Permet de choisir une icône dans la liste exhaustive ou d'en taper n'importe quelle autre
-     */
-    private async showIconPicker(): Promise<string | undefined> {
+    private showTagQuickPickWithActions(currentTagLabel?: string): Promise<TagQuickPickItem | undefined> {
         return new Promise((resolve) => {
-            const quickPick = vscode.window.createQuickPick();
-            quickPick.placeholder = 'Recherchez une icône (ex: bug, shield, zap, cloud...)';
+            const quickPick = vscode.window.createQuickPick<TagQuickPickItem>();
+            quickPick.placeholder = currentTagLabel
+                ? vscode.l10n.t('Current tag: {0} (Select to change)', currentTagLabel.toUpperCase())
+                : vscode.l10n.t('Select, create or edit a tag');
             quickPick.ignoreFocusOut = true;
 
-            const baseItems: vscode.QuickPickItem[] = EXTENDED_PRESET_ICONS.map(i => ({
+            const updateItems = () => {
+                const config = vscode.workspace.getConfiguration('smartbookmarks');
+                const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
+
+                const items: TagQuickPickItem[] = [];
+
+                items.push({
+                    label: `$(circle-slash) ${vscode.l10n.t('No tag')}`,
+                    description: vscode.l10n.t('Do not use a tag for this bookmark'),
+                    isNoTagAction: true
+                });
+
+                const tagItems: TagQuickPickItem[] = userTags.map(tag => {
+                    const isCurrent = currentTagLabel?.toUpperCase() === tag.label.toUpperCase();
+                    const iconPrefix = tag.icon ? (tag.icon.startsWith('$(') ? tag.icon : `$(${tag.icon})`) : '$(tag)';
+                    const tagLabel = isCurrent
+                        ? vscode.l10n.t('{0} (Current)', tag.label.toUpperCase())
+                        : tag.label.toUpperCase();
+                    return {
+                        label: `${iconPrefix} ${tagLabel}`,
+                        description: tag.description,
+                        rawTag: tag,
+                        buttons: [
+                            {
+                                iconPath: new vscode.ThemeIcon('edit'),
+                                tooltip: vscode.l10n.t('Edit tag "{0}"', tag.label.toUpperCase())
+                            },
+                            {
+                                iconPath: new vscode.ThemeIcon('trash'),
+                                tooltip: vscode.l10n.t('Delete tag "{0}"', tag.label.toUpperCase())
+                            }
+                        ]
+                    };
+                });
+
+                items.push(...tagItems);
+
+                items.push({
+                    label: `$(add) ➕ ${vscode.l10n.t('Create a new tag...')}`,
+                    description: vscode.l10n.t('Add a custom tag with visual icon selection'),
+                    isCreateAction: true
+                });
+
+                quickPick.items = items;
+            };
+
+            updateItems();
+
+            // Gestion des clics sur les boutons des items (Éditer ou Supprimer)
+            quickPick.onDidTriggerItemButton(async (e) => {
+                const tag = e.item.rawTag;
+                if (!tag) { return; }
+
+                const iconId = (e.button.iconPath as vscode.ThemeIcon).id;
+
+                if (iconId === 'trash') {
+                    // --- SUPPRESSION ---
+                    const deleteLabel = vscode.l10n.t('Delete');
+                    const confirm = await vscode.window.showWarningMessage(
+                        vscode.l10n.t('Are you sure you want to delete the tag "{0}"?', tag.label.toUpperCase()),
+                        { modal: true },
+                        deleteLabel
+                    );
+
+                    if (confirm === deleteLabel) {
+                        const config = vscode.workspace.getConfiguration('smartbookmarks');
+                        let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
+                        userTags = userTags.filter(t => t.label.toUpperCase() !== tag.label.toUpperCase());
+                        await config.update('tags', userTags, vscode.ConfigurationTarget.Global);
+
+                        vscode.window.showInformationMessage(vscode.l10n.t('Tag "{0}" deleted.', tag.label.toUpperCase()));
+                        updateItems();
+                    }
+                } else if (iconId === 'edit') {
+                    // --- MODIFICATION (Titre, Icône, Description) ---
+                    const oldLabel = tag.label.toUpperCase();
+
+                    // 1. Nouveau Titre
+                    const newLabelInput = await vscode.window.showInputBox({
+                        prompt: vscode.l10n.t('New tag name'),
+                        value: tag.label,
+                        ignoreFocusOut: true
+                    });
+                    if (newLabelInput === undefined || newLabelInput.trim() === '') { return; }
+                    const newLabel = newLabelInput.trim().toUpperCase();
+
+                    // 2. Nouvelle Icône
+                    const newIcon = await this.showIconPicker(tag.icon);
+                    if (!newIcon) { return; }
+
+                    // 3. Nouvelle Description
+                    const newDescInput = await vscode.window.showInputBox({
+                        prompt: vscode.l10n.t('New tag description (optional)'),
+                        value: tag.description || '',
+                        ignoreFocusOut: true
+                    });
+                    if (newDescInput === undefined) { return; }
+
+                    // Mise à jour de la configuration utilisateur
+                    const config = vscode.workspace.getConfiguration('smartbookmarks');
+                    let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
+                    const index = userTags.findIndex(t => t.label.toUpperCase() === oldLabel);
+
+                    if (index !== -1) {
+                        userTags[index] = {
+                            label: newLabel,
+                            icon: newIcon,
+                            description: newDescInput.trim()
+                        };
+                        await config.update('tags', userTags, vscode.ConfigurationTarget.Global);
+
+                        // Si le nom du tag a changé, mettre à jour tous les signets qui possédaient l'ancien nom
+                        if (oldLabel !== newLabel) {
+                            this.provider.renameTagInBookmarks(oldLabel, newLabel);
+                        } else {
+                            // Rafraîchir les décorations au cas où l'icône seule a changé
+                            this.provider.refresh();
+                        }
+
+                        vscode.window.showInformationMessage(vscode.l10n.t('Tag "{0}" updated successfully.', newLabel));
+                        updateItems();
+                    }
+                }
+            });
+
+            quickPick.onDidAccept(() => {
+                const selected = quickPick.selectedItems[0];
+                quickPick.hide();
+                resolve(selected);
+            });
+
+            quickPick.onDidHide(() => {
+                resolve(undefined);
+                quickPick.dispose();
+            });
+
+            quickPick.show();
+        });
+    }
+
+    private async showIconPicker(currentIcon?: string): Promise<string | undefined> {
+        return new Promise((resolve) => {
+            const quickPick = vscode.window.createQuickPick();
+            quickPick.placeholder = currentIcon
+                ? vscode.l10n.t('Current icon: $({0}) {0}. Search to change...', currentIcon)
+                : vscode.l10n.t('Search for an icon (e.g. bug, shield, zap, cloud...)');
+            quickPick.ignoreFocusOut = true;
+
+            const baseItems: vscode.QuickPickItem[] = getExtendedPresetIcons().map(i => ({
                 label: i.label,
                 description: i.description
             }));
@@ -210,17 +326,15 @@ export class AddBookmarkWithCommentCommand {
                     return;
                 }
 
-                // Filtrage dynamique des icônes
                 const filtered = baseItems.filter(item =>
                     item.label.toLowerCase().includes(search) ||
                     (item.description && item.description.toLowerCase().includes(search))
                 );
 
-                // Option d'utiliser directement l'identifiant saisi si aucun résultat exact
                 if (filtered.length === 0) {
                     quickPick.items = [{
                         label: `$(${search}) ${search}`,
-                        description: `Utiliser l'icône Codicon "$(${search})"`
+                        description: vscode.l10n.t('Use Codicon "$({0})"', search)
                     }];
                 } else {
                     quickPick.items = filtered;
@@ -245,90 +359,37 @@ export class AddBookmarkWithCommentCommand {
         });
     }
 
-    private showTagQuickPickWithDelete(): Promise<TagQuickPickItem | undefined> {
-        return new Promise((resolve) => {
-            const quickPick = vscode.window.createQuickPick<TagQuickPickItem>();
-            quickPick.placeholder = 'Sélectionnez ou créez un tag pour ce signet';
-            quickPick.ignoreFocusOut = true;
-
-            const updateItems = () => {
-                const config = vscode.workspace.getConfiguration('smartbookmarks');
-                const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
-
-                const items: TagQuickPickItem[] = userTags.map(tag => {
-                    const iconPrefix = tag.icon ? (tag.icon.startsWith('$(') ? tag.icon : `$(${tag.icon})`) : '$(tag)';
-                    return {
-                        label: `${iconPrefix} ${tag.label.toUpperCase()}`,
-                        description: tag.description,
-                        rawTag: tag,
-                        buttons: [{
-                            iconPath: new vscode.ThemeIcon('trash'),
-                            tooltip: `Supprimer le tag "${tag.label.toUpperCase()}"`
-                        }]
-                    };
-                });
-
-                items.push({
-                    label: '$(add) ➕ Créer un nouveau tag...',
-                    description: 'Ajouter un tag personnalisé avec choix visuel d\'icône',
-                    isCreateAction: true
-                });
-
-                quickPick.items = items;
-            };
-
-            updateItems();
-
-            quickPick.onDidTriggerItemButton(async (e) => {
-                const tagToDelete = e.item.rawTag;
-                if (!tagToDelete) { return; }
-
-                const confirm = await vscode.window.showWarningMessage(
-                    `Voulez-vous vraiment supprimer le tag "${tagToDelete.label.toUpperCase()}" ?`,
-                    { modal: true },
-                    'Supprimer'
-                );
-
-                if (confirm === 'Supprimer') {
-                    const config = vscode.workspace.getConfiguration('smartbookmarks');
-                    let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
-                    userTags = userTags.filter(t => t.label.toUpperCase() !== tagToDelete.label.toUpperCase());
-                    await config.update('tags', userTags, vscode.ConfigurationTarget.Global);
-
-                    vscode.window.showInformationMessage(`Tag "${tagToDelete.label.toUpperCase()}" supprimé.`);
-                    updateItems();
-                }
+    private async askMultilineComment(existingComment?: string): Promise<string | undefined | false> {
+        if (existingComment) {
+            const action = await vscode.window.showQuickPick([
+                { label: `$(check) ${vscode.l10n.t('Keep current comment')}`, action: 'keep', description: existingComment.replace(/\n/g, ' \\ ') },
+                { label: `$(edit) ${vscode.l10n.t('Rewrite / Edit comment')}`, action: 'edit' },
+                { label: `$(trash) ${vscode.l10n.t('Clear comment')}`, action: 'clear' }
+            ], {
+                placeHolder: vscode.l10n.t('Existing comment detected'),
+                ignoreFocusOut: true
             });
 
-            quickPick.onDidAccept(() => {
-                const selected = quickPick.selectedItems[0];
-                quickPick.hide();
-                resolve(selected);
-            });
+            if (!action) { return false; }
+            if (action.action === 'keep') { return existingComment; }
+            if (action.action === 'clear') { return undefined; }
+        }
 
-            quickPick.onDidHide(() => {
-                resolve(undefined);
-                quickPick.dispose();
-            });
-
-            quickPick.show();
-        });
-    }
-
-    private async askMultilineComment(): Promise<string | undefined> {
         const lines: string[] = [];
         let adding = true;
 
         while (adding) {
             const preview = lines.length > 0
-                ? ` (Texte actuel: "${lines.join(' \\n ')}")`
+                ? vscode.l10n.t(' (Current text: "{0}")', lines.join(' \\n '))
                 : '';
 
             const lineInput = await vscode.window.showInputBox({
                 prompt: lines.length === 0
-                    ? 'Saisissez la première ligne de votre commentaire'
-                    : `Saisissez la ligne ${lines.length + 1}${preview}`,
-                placeHolder: lines.length === 0 ? 'Ex: Vérifier le token JWT' : 'Laissez vide et validez pour terminer',
+                    ? vscode.l10n.t('Enter the first line of your comment')
+                    : vscode.l10n.t('Enter line {0}{1}', lines.length + 1, preview),
+                placeHolder: lines.length === 0
+                    ? vscode.l10n.t('E.g. Check JWT token')
+                    : vscode.l10n.t('Leave empty and submit to finish'),
                 ignoreFocusOut: true
             });
 
@@ -342,10 +403,10 @@ export class AddBookmarkWithCommentCommand {
                 lines.push(lineInput);
 
                 const choice = await vscode.window.showQuickPick([
-                    { label: '$(check) ✅ Terminer et enregistrer', action: 'done' },
-                    { label: '$(add) ➕ Ajouter une autre ligne', action: 'add' }
+                    { label: `$(check) ✅ ${vscode.l10n.t('Finish and save')}`, action: 'done' },
+                    { label: `$(add) ➕ ${vscode.l10n.t('Add another line')}`, action: 'add' }
                 ], {
-                    placeHolder: `Ligne ${lines.length} ajoutée. Continuer ?`,
+                    placeHolder: vscode.l10n.t('Line {0} added. Continue?', lines.length),
                     ignoreFocusOut: true
                 });
 

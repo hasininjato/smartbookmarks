@@ -25,7 +25,7 @@ export class ListBookmarksCommand {
         }
 
         if (bookmarks.length === 0) {
-            vscode.window.showInformationMessage('No bookmarks found');
+            vscode.window.showInformationMessage(vscode.l10n.t('No bookmarks found'));
             return;
         }
 
@@ -38,13 +38,13 @@ export class ListBookmarksCommand {
 
         // 3. Créer le QuickPick
         const quickPick = vscode.window.createQuickPick<BookmarkQuickPickItem>();
-        quickPick.placeholder = 'Select a bookmark to navigate';
+        quickPick.placeholder = vscode.l10n.t('Select a bookmark to navigate');
 
         // Transformer les signets en éléments de liste
         quickPick.items = sortedBookmarks.map(b => {
-            const author = b.author || 'Unknown';
+            const author = b.author || vscode.l10n.t('Unknown');
             const dateStr = b.createdDateFormatted
-                || (b.createdAt ? new Date(b.createdAt).toLocaleString('fr-FR') : 'Unknown date');
+                || (b.createdAt ? new Date(b.createdAt).toLocaleString(vscode.env.language) : vscode.l10n.t('Unknown date'));
 
             // Récupération de l'icône associée au tag
             let tagStr = '';
@@ -76,7 +76,7 @@ export class ListBookmarksCommand {
                 buttons: [
                     {
                         iconPath: new vscode.ThemeIcon('trash'),
-                        tooltip: 'Delete this bookmark'
+                        tooltip: vscode.l10n.t('Delete this bookmark')
                     }
                 ]
             };

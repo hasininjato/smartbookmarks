@@ -79,7 +79,7 @@ export function getGitUser(filePath?: string): { name: string; email: string } {
 
     // 4. Retour final garanti
     return {
-        name: name || 'Unknown',
+        name: name || vscode.l10n.t('Unknown'),
         email: email || ''
     };
 }
