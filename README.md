@@ -1,5 +1,7 @@
 # Smart Bookmarks
 
+![Texte alternatif](resources/logo.png)
+
 **Bookmarks that follow your code, not your line numbers.**
 
 Smart Bookmarks is a VS Code extension designed to make code bookmarks more useful and resilient. Bookmarks can be attached to code symbols or to selected lines, with visual markers directly in the editor.

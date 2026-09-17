@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+     fill="none" stroke="#C5C5C5" stroke-width="1.5"
+     stroke-linecap="round" stroke-linejoin="round">
+  <!-- signet très large : x de 3.5 à 20.5 -->
+  <path d="M3.5 22 V3.5 Q3.5 2.5 4.5 2.5 H19.5 Q20.5 2.5 20.5 3.5 V22 L12 17.2 Z"/>
+  <!-- </> affiné et élargi -->
+  <polyline points="10 7.4 6.2 9.9 10 12.4"/>
+  <polyline points="14 7.4 17.8 9.9 14 12.4"/>
+  <line x1="13.4" y1="7.3" x2="10.6" y2="12.5"/>
+</svg>
