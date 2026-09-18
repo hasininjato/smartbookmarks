@@ -47,22 +47,15 @@ The matching strategy progressively uses:
 4. Surrounding code context
 5. Fuzzy matching
 
-If a bookmark cannot be reliably located, it is marked as **orphaned** instead of silently pointing to the wrong location.
-
 ### 📝 Notes and tags
 
-Add notes to your bookmarks to keep context directly attached to your code.
+Attach context directly to your code by adding custom titles, multiline notes, and personalized tags to your bookmarks.
 
-Tags can be used to organize bookmarks, for example:
+Smart Bookmarks starts with a completely clean slate (0 default tags). There are no pre-configured tags—you have total freedom to build your own tagging system from scratch based entirely on your workflow.
 
-* `NOTE` — Information or observations
-* `TODO` — Work that remains to be done
-* `FIXME` — Code that needs fixing
-* `BUG` — Potential or known issue
-* `REVIEW` — Requires code review
-* `OPTIM` — Performance improvement
-
-Tags and bookmark metadata can be customized through VS Code settings.
+* 100% Custom Tags: Create tags on the fly with custom names, optional descriptions, and VS Code Codicons during bookmark creation (Ctrl+Shift+C)
+* Inline Management: Create, edit (label, icon, description), or delete tags directly inside the QuickPick menu (Ctrl+Shift+C)
+* Smart Propagation: Renaming a tag automatically updates all existing bookmarks assigned to that tag across your entire workspace
 
 ### 📋 Bookmark panel
 
