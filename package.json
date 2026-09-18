@@ -21,7 +21,7 @@
         {
           "id": "smartBookmarksContainer",
           "title": "%viewsContainers.smartBookmarksContainer%",
-          "icon": "$(bookmark)"
+          "icon": "resources/activitybar.svg"
         }
       ]
     },

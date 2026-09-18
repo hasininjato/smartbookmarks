@@ -14,17 +14,17 @@ export async function getSymbolAtPosition(
         return null;
     }
 
-    // Trouve le symbole le plus haut niveau (fonction/classe) qui contient la position
+    // Find the highest-level symbol (function/class) that contains the position
     const findFunctionOrClass = (items: vscode.DocumentSymbol[]): vscode.DocumentSymbol | null => {
         for (const item of items) {
             if (item.range && item.range.contains(position)) {
-                // Si c'est une fonction, méthode ou classe, on le prend DIRECTEMENT
+                // If it is a function, method, or class, take it DIRECTLY
                 if (item.kind === vscode.SymbolKind.Function ||
                     item.kind === vscode.SymbolKind.Method ||
                     item.kind === vscode.SymbolKind.Class) {
                     return item;
                 }
-                // Sinon on regarde dans ses enfants
+                // Otherwise, look through its children
                 if (item.children && item.children.length > 0) {
                     const found = findFunctionOrClass(item.children);
                     if (found) { return found; }

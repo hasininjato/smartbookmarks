@@ -4,15 +4,15 @@ import * as path from 'path';
 import { execSync, ExecSyncOptions } from 'child_process';
 
 /**
- * Récupère l'identifiant de l'auteur du signet.
- * Ordre de priorité :
+ * Retrieves the bookmark author's identifier.
+ * Priority order:
  * 1. Git config user.name (CLI)
  * 2. Git config user.email (CLI)
- * 3. Extension VS Code Git (user.name puis user.email)
- * 4. Session OS (username)
- * 5. 'Inconnu'
- * 
- * @param filePath Chemin absolu du fichier (optionnel)
+ * 3. VS Code Git extension (user.name then user.email)
+ * 4. OS session (username)
+ * 5. 'Unknown'
+ *
+ * @param filePath Absolute file path (optional)
  */
 export function getGitUser(filePath?: string): { name: string; email: string } {
     let name = '';
@@ -20,34 +20,34 @@ export function getGitUser(filePath?: string): { name: string; email: string } {
 
     const cwd = filePath ? path.dirname(filePath) : process.cwd();
 
-    // Configuration explicite et sécurisée des options execSync
+    // Explicit and secure execSync options
     const execOptions: ExecSyncOptions = {
         cwd,
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'ignore']
     };
 
-    // 1. Recherche via Git CLI (Nom puis Email)
+    // 1. Look up via Git CLI (Name then Email)
     try {
         const result = execSync('git config user.name', execOptions);
         name = typeof result === 'string' ? result.trim() : '';
     } catch {
-        // Ignorer l'erreur si hors dépôt Git ou CLI indisponible
+        // Ignore the error if outside a Git repository or if the CLI is unavailable
     }
 
     try {
         const result = execSync('git config user.email', execOptions);
         email = typeof result === 'string' ? result.trim() : '';
     } catch {
-        // Ignorer
+        // Ignore
     }
 
-    // Si on a l'email mais pas de nom, on utilise l'email comme nom d'affichage principal
+    // If we have an email but no name, use the email as the display name
     if (!name && email) {
         name = email;
     }
 
-    // 2. Fallback via l'extension VS Code Git native (si le CLI n'a rien renvoyé)
+    // 2. Fallback to the native VS Code Git extension (if the CLI returned nothing)
     if (!name) {
         try {
             const gitExtension = vscode.extensions.getExtension('vscode.git')?.exports;
@@ -64,11 +64,11 @@ export function getGitUser(filePath?: string): { name: string; email: string } {
                 }
             }
         } catch {
-            // Ignorer si l'API n'est pas accessible
+            // Ignore if the API is not accessible
         }
     }
 
-    // 3. Fallback sur la session de l'OS (Nom de compte Windows/Mac/Linux)
+    // 3. Fallback to the OS session (Windows/Mac/Linux account name)
     if (!name) {
         try {
             name = os.userInfo().username?.trim() || '';
@@ -77,7 +77,7 @@ export function getGitUser(filePath?: string): { name: string; email: string } {
         }
     }
 
-    // 4. Retour final garanti
+    // 4. Guaranteed final return
     return {
         name: name || vscode.l10n.t('Unknown'),
         email: email || ''

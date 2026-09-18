@@ -35,7 +35,7 @@ export class SymbolTracker implements vscode.Disposable {
 
         for (const bookmark of bookmarks) {
             const symbol = symbols.find(s => s.name === bookmark.symbolName);
-            // FIX: vérifie que symbol et symbol.range existent
+            // FIX: check that symbol and symbol.range exist
             if (symbol && symbol.range && bookmark.range) {
                 if (!symbol.range.isEqual(bookmark.range)) {
                     this.provider.updatePosition(bookmark.id, symbol.range);
@@ -57,7 +57,7 @@ export class SymbolTracker implements vscode.Disposable {
 
             const flatten = (items: vscode.DocumentSymbol[]) => {
                 for (const item of items) {
-                    // FIX: vérifie que item.range existe
+                    // FIX: check that item.range exists
                     if (item.range) {
                         result.push({
                             name: item.name || vscode.l10n.t('Unknown'),

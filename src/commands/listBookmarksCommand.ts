@@ -14,12 +14,12 @@ export class ListBookmarksCommand {
     async execute(): Promise<void> {
         const activeEditor = vscode.window.activeTextEditor;
 
-        // 1. Chercher les signets du fichier actif
+        // 1. Find bookmarks from the active file
         let bookmarks = activeEditor
             ? this.provider.getForFile(activeEditor.document.uri.fsPath)
             : [];
 
-        // 2. Fallback sur TOUS les signets si vide
+        // 2. Fallback to ALL bookmarks if empty
         if (bookmarks.length === 0) {
             bookmarks = this.provider.getBookmarks();
         }
@@ -29,24 +29,24 @@ export class ListBookmarksCommand {
             return;
         }
 
-        // Récupération des tags configurés pour résoudre les icônes
+        // Retrieve configured tags to resolve their icons
         const config = vscode.workspace.getConfiguration('smartbookmarks');
         const userTags = config.get<BookmarkTagConfig[]>('tags') || [];
 
-        // Trier les signets par ligne
+        // Sort bookmarks by line
         const sortedBookmarks = [...bookmarks].sort((a, b) => a.line - b.line);
 
-        // 3. Créer le QuickPick
+        // 3. Create the QuickPick
         const quickPick = vscode.window.createQuickPick<BookmarkQuickPickItem>();
         quickPick.placeholder = vscode.l10n.t('Select a bookmark to navigate');
 
-        // Transformer les signets en éléments de liste
+        // Transform bookmarks into list items
         quickPick.items = sortedBookmarks.map(b => {
             const author = b.author || vscode.l10n.t('Unknown');
             const dateStr = b.createdDateFormatted
                 || (b.createdAt ? new Date(b.createdAt).toLocaleString(vscode.env.language) : vscode.l10n.t('Unknown date'));
 
-            // Récupération de l'icône associée au tag
+            // Retrieve the icon associated with the tag
             let tagStr = '';
             if (b.tag && b.tag.trim().length > 0) {
                 const formattedTag = b.tag.toUpperCase();
@@ -57,7 +57,7 @@ export class ListBookmarksCommand {
                 tagStr = `$(${cleanIconName}) [${formattedTag}] `;
             }
 
-            // Construction du bloc Titre et Note / Commentaire pour la zone de détails
+            // Build the Title and Note / Comment block for the details area
             let detailParts: string[] = [];
             if (b.title) {
                 detailParts.push(`📌 ${b.title}`);
@@ -82,7 +82,7 @@ export class ListBookmarksCommand {
             };
         });
 
-        // 4. Clic sur la corbeille
+        // 4. Click on the trash button
         quickPick.onDidTriggerItemButton(async (e) => {
             const item = e.item;
             this.provider.delete(item.bookmark.id);
@@ -94,7 +94,7 @@ export class ListBookmarksCommand {
             }
         });
 
-        // 5. Clic sur la ligne (navigation)
+        // 5. Click on the line (navigation)
         quickPick.onDidAccept(async () => {
             const selected = quickPick.selectedItems[0];
             if (selected) {

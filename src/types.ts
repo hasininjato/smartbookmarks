@@ -7,11 +7,11 @@ export interface Bookmark {
     filePath: string;
     range: vscode.Range;
     line: number;
-    // Ancre textuelle pour la récupération après suppression/fusion :
-    // - lineText : contenu de la ligne du signet
-    // - lineTextContext : contenu de la ligne juste au-dessus, utilisé pour
-    //   désambiguïser quand lineText seul correspond à plusieurs lignes du fichier
-    //   (ex: du code répétitif comme deux endpoints avec une ligne identique)
+    // Text anchor used for recovery after deletion/merging:
+    // - lineText: content of the bookmarked line
+    // - lineTextContext: content of the line immediately above, used to
+    //   disambiguate when lineText alone matches multiple lines in the file
+    //   (e.g. repetitive code such as two endpoints with an identical line)
     lineText?: string;
     lineTextContext?: string;
     createdAt: number;
@@ -41,6 +41,6 @@ export interface BookmarkGroup {
 
 export interface BookmarkTagConfig {
     label: string;
-    icon?: string; // Ex: 'bug', 'tools', ou un emoji '🐛'
+    icon?: string; // E.g. 'bug', 'tools', or an emoji '🐛'
     description?: string;
 }

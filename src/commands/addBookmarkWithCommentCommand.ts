@@ -28,7 +28,7 @@ export class AddBookmarkWithCommentCommand {
         const startLine = selection.start.line;
         const endLine = selection.end.line;
 
-        // 0. Vérification si un signet existe déjà
+        // 0. Check if a bookmark already exists
         const existingBookmark: Bookmark | undefined = this.provider.getBookmark(filePath, startLine);
         const isEditing = !!existingBookmark;
 
@@ -58,7 +58,7 @@ export class AddBookmarkWithCommentCommand {
         const lineText = document.lineAt(startLine).text;
         const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
 
-        // 1. Sélection / Édition / Suppression du Tag
+        // 1. Tag Selection / Editing / Deletion
         const selectedTagItem = await this.showTagQuickPickWithActions(existingBookmark?.tag);
         if (!selectedTagItem) { return; }
 
@@ -109,7 +109,7 @@ export class AddBookmarkWithCommentCommand {
             selectedTagLabel = selectedTagItem.rawTag.label.toUpperCase();
         }
 
-        // 2. Titre
+        // 2. Title
         const rawTitle = await vscode.window.showInputBox({
             prompt: isEditing ? vscode.l10n.t('Edit bookmark title') : vscode.l10n.t('Enter a title for this bookmark'),
             value: existingBookmark?.title || '',
@@ -120,12 +120,12 @@ export class AddBookmarkWithCommentCommand {
         if (rawTitle === undefined) { return; }
         const cleanTitle = rawTitle.trim().length > 0 ? rawTitle.trim() : undefined;
 
-        // 3. Commentaire
+        // 3. Comment
         const rawComment = await this.askMultilineComment(existingBookmark?.comment);
         if (rawComment === false) { return; }
         const cleanComment = rawComment && rawComment.trim().length > 0 ? rawComment.trim() : undefined;
 
-        // 4. Sauvegarde
+        // 4. Save
         if (isEditing) {
             this.provider.updateBookmark(filePath, startLine, {
                 symbol,
@@ -212,7 +212,7 @@ export class AddBookmarkWithCommentCommand {
 
             updateItems();
 
-            // Gestion des clics sur les boutons des items (Éditer ou Supprimer)
+            // Handle clicks on item buttons (Edit or Delete)
             quickPick.onDidTriggerItemButton(async (e) => {
                 const tag = e.item.rawTag;
                 if (!tag) { return; }
@@ -220,7 +220,7 @@ export class AddBookmarkWithCommentCommand {
                 const iconId = (e.button.iconPath as vscode.ThemeIcon).id;
 
                 if (iconId === 'trash') {
-                    // --- SUPPRESSION ---
+                    // --- DELETION ---
                     const deleteLabel = vscode.l10n.t('Delete');
                     const confirm = await vscode.window.showWarningMessage(
                         vscode.l10n.t('Are you sure you want to delete the tag "{0}"?', tag.label.toUpperCase()),
@@ -238,10 +238,10 @@ export class AddBookmarkWithCommentCommand {
                         updateItems();
                     }
                 } else if (iconId === 'edit') {
-                    // --- MODIFICATION (Titre, Icône, Description) ---
+                    // --- EDIT (Title, Icon, Description) ---
                     const oldLabel = tag.label.toUpperCase();
 
-                    // 1. Nouveau Titre
+                    // 1. New Title
                     const newLabelInput = await vscode.window.showInputBox({
                         prompt: vscode.l10n.t('New tag name'),
                         value: tag.label,
@@ -250,11 +250,11 @@ export class AddBookmarkWithCommentCommand {
                     if (newLabelInput === undefined || newLabelInput.trim() === '') { return; }
                     const newLabel = newLabelInput.trim().toUpperCase();
 
-                    // 2. Nouvelle Icône
+                    // 2. New Icon
                     const newIcon = await this.showIconPicker(tag.icon);
                     if (!newIcon) { return; }
 
-                    // 3. Nouvelle Description
+                    // 3. New Description
                     const newDescInput = await vscode.window.showInputBox({
                         prompt: vscode.l10n.t('New tag description (optional)'),
                         value: tag.description || '',
@@ -262,7 +262,7 @@ export class AddBookmarkWithCommentCommand {
                     });
                     if (newDescInput === undefined) { return; }
 
-                    // Mise à jour de la configuration utilisateur
+                    // Update the user configuration
                     const config = vscode.workspace.getConfiguration('smartbookmarks');
                     let userTags = config.get<BookmarkTagConfig[]>('tags') || [];
                     const index = userTags.findIndex(t => t.label.toUpperCase() === oldLabel);
@@ -275,11 +275,11 @@ export class AddBookmarkWithCommentCommand {
                         };
                         await config.update('tags', userTags, vscode.ConfigurationTarget.Global);
 
-                        // Si le nom du tag a changé, mettre à jour tous les signets qui possédaient l'ancien nom
+                        // If the tag name changed, update all bookmarks that had the old name
                         if (oldLabel !== newLabel) {
                             this.provider.renameTagInBookmarks(oldLabel, newLabel);
                         } else {
-                            // Rafraîchir les décorations au cas où l'icône seule a changé
+                            // Refresh decorations in case only the icon changed
                             this.provider.refresh();
                         }
 

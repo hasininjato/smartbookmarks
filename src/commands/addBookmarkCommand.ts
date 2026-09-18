@@ -20,7 +20,7 @@ export class AddBookmarkCommand {
         const startLine = selection.start.line;
         const endLine = selection.end.line;
 
-        // Récupération du symbole sur la première ligne de la sélection
+        // Retrieve the symbol on the first line of the selection
         const symbol = await getSymbolAtPosition(document, selection.start);
 
         const lineRange = new vscode.Range(startLine, 0, startLine, 0);
@@ -37,7 +37,7 @@ export class AddBookmarkCommand {
             selectionRange: lineRange
         };
 
-        // Si plusieurs lignes sont sélectionnées, on sauvegarde la plage complète (1re à dernière ligne)
+        // If multiple lines are selected, save the complete range (first to last line)
         let highlightRange: { startLine: number; endLine: number } | undefined = undefined;
         if (endLine > startLine) {
             highlightRange = {
@@ -46,10 +46,10 @@ export class AddBookmarkCommand {
             };
         }
 
-        // Ancre textuelle : contenu de la ligne au moment de la création du signet
+        // Text anchor: content of the line at the time the bookmark is created
         const lineText = document.lineAt(startLine).text;
 
-        // Contexte de désambiguïsation : contenu de la ligne juste au-dessus
+        // Disambiguation context: content of the line immediately above
         const lineTextContext = startLine > 0 ? document.lineAt(startLine - 1).text : undefined;
 
         const bookmark = this.provider.toggle(

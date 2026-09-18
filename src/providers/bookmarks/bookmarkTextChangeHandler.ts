@@ -3,9 +3,9 @@ import { Bookmark } from '../../types';
 import { findMatchingLine } from './bookmarkLineMatcher';
 
 /**
- * Applique un changement de texte VS Code aux signets d'un fichier :
- * décale, met à jour ou supprime les signets impactés en fonction du diff.
- * Retourne true si au moins un signet a été modifié.
+ * Applies a VS Code text change to the bookmarks of a file:
+ * shifts, updates, or deletes affected bookmarks based on the diff.
+ * Returns true if at least one bookmark was modified.
  */
 export function handleTextChange(
     document: vscode.TextDocument,
@@ -37,7 +37,7 @@ export function handleTextChange(
             changeStartLine < startLine &&
             changeEndLine === startLine;
 
-        // 1. Suppression du signet
+        // 1. Bookmark deletion
         const isLineDeleted = !isSelectionUpwardsFromBookmark && (
             (startsAtLineHead && changeEndLine > endLine) ||
             (changeStartLine < startLine && changeEndLine >= startLine && lineDelta < 0) ||
@@ -62,7 +62,7 @@ export function handleTextChange(
             continue;
         }
 
-        // 2. Remontée via sélection vers le haut
+        // 2. Move upward via selection
         if (isSelectionUpwardsFromBookmark) {
             const targetLine = changeStartLine + 1;
             const diff = targetLine - bookmark.line;
@@ -78,7 +78,7 @@ export function handleTextChange(
             bookmark.updatedAt = Date.now();
             hasChanged = true;
         }
-        // 3. Décalage vertical standard (modification avant le signet)
+        // 3. Standard vertical shift (change before the bookmark)
         else if (changeEndLine < startLine) {
             if (lineDelta !== 0) {
                 bookmark.line = Math.max(1, bookmark.line + lineDelta);
@@ -93,7 +93,7 @@ export function handleTextChange(
                 hasChanged = true;
             }
         }
-        // 4. Édition sur la première ligne de la plage (startLine)
+        // 4. Edit on the first line of the range (startLine)
         else if (changeStartLine === startLine) {
             if (lineDelta > 0) {
                 const lineText = document.lineAt(changeStartLine).text;
@@ -119,7 +119,7 @@ export function handleTextChange(
                         bookmark.lineText = document.lineAt(newLineIndex).text;
                     }
                 } else if (highlightRange) {
-                    // FIX: On incrémente endLine directement sans exiger (startLine < endLine)
+                    // FIX: Increment endLine directly without requiring (startLine < endLine)
                     highlightRange.endLine += lineDelta;
                 }
                 bookmark.updatedAt = Date.now();
@@ -136,7 +136,7 @@ export function handleTextChange(
                 hasChanged = true;
             }
         }
-        // 5. Édition à l'intérieur ou sur la dernière ligne de la plage
+        // 5. Edit inside or on the last line of the range
         else if (changeStartLine > startLine && changeStartLine <= endLine) {
             if (highlightRange && lineDelta !== 0) {
                 let shouldUpdateEndLine = true;
@@ -160,7 +160,7 @@ export function handleTextChange(
             }
         }
 
-        // Vérification de dérive
+        // Drift check
         if (bookmark.lineText) {
             const currentLineIndex = bookmark.line - 1;
             if (currentLineIndex >= 0 && currentLineIndex < documentLineCount) {
@@ -196,7 +196,7 @@ export function handleTextChange(
             }
         }
 
-        // Normalisation des bornes du HighlightRange
+        // Normalize HighlightRange boundaries
         if (highlightRange) {
             highlightRange.startLine = Math.max(0, highlightRange.startLine);
             highlightRange.endLine = Math.max(highlightRange.startLine, highlightRange.endLine);

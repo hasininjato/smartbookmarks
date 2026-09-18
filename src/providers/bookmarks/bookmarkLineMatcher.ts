@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 
 /**
- * Recherche une ligne dont le contenu correspond exactement (trim) au texte attendu,
- * dans un rayon autour de la position d'origine.
- * - Si un seul candidat correspond : on le retourne directement.
- * - Si plusieurs candidats correspondent (code répétitif, ex: deux endpoints avec
- *   une ligne identique) : on utilise le contenu de la ligne précédente comme
- *   contexte de désambiguïsation. On ne retourne un résultat que si UN SEUL
- *   candidat a aussi la bonne ligne précédente.
+ * Searches for a line whose content exactly matches (trimmed) the expected text,
+ * within a radius around the original position.
+ * - If only one matching candidate exists: return it directly.
+ * - If multiple candidates match (repetitive code, e.g. two endpoints with
+ *   an identical line): use the content of the previous line as
+ *   disambiguation context. Only return a result if EXACTLY ONE
+ *   candidate also has the expected previous line.
  */
 export function findMatchingLine(
     document: vscode.TextDocument,
@@ -18,7 +18,7 @@ export function findMatchingLine(
 ): number | null {
     const target = expectedText.trim();
 
-    // Trop court = pas fiable (ex: une ligne avec juste "}" ou "")
+    // Too short = unreliable (e.g. a line containing only "}" or "")
     if (target.length < 4) {
         return null;
     }

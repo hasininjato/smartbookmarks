@@ -7,7 +7,7 @@ export class Storage {
     private filePath: string;
 
     constructor(context: vscode.ExtensionContext) {
-        // Utilisation de globalStorageUri (recommandé par VS Code)
+        // Use globalStorageUri (recommended by VS Code)
         this.filePath = path.join(context.globalStorageUri.fsPath, 'bookmarks.json');
         this.ensureDir();
     }
@@ -15,7 +15,7 @@ export class Storage {
     private ensureDir(): void {
         const dir = path.dirname(this.filePath);
         if (!fs.existsSync(dir)) {
-            // Crée le dossier d'extension global de manière récursive
+            // Recursively create the global extension storage directory
             fs.mkdirSync(dir, { recursive: true });
         }
     }
@@ -24,7 +24,7 @@ export class Storage {
         try {
             this.ensureDir();
 
-            // Sérialisation propre des objets VS Code (Range, Position)
+            // Proper serialization of VS Code objects (Range, Position)
             const serialized = bookmarks.map(b => ({
                 ...b,
                 range: b.range ? {
@@ -36,7 +36,7 @@ export class Storage {
             const data = JSON.stringify(serialized, null, 2);
             fs.writeFileSync(this.filePath, data, 'utf8');
         } catch (error) {
-            console.error('❌ Erreur de sauvegarde SmartBookmarks:', error);
+            console.error('❌ SmartBookmarks save error:', error);
         }
     }
 
@@ -53,7 +53,7 @@ export class Storage {
 
             const parsed = JSON.parse(data);
 
-            // Reconstitution sécurisée des types vscode.Range
+            // Safely reconstruct vscode.Range types
             return parsed.map((b: any) => {
                 let range = new vscode.Range(0, 0, 0, 0);
 
@@ -72,7 +72,7 @@ export class Storage {
                 };
             });
         } catch (error) {
-            console.error('❌ Erreur de chargement SmartBookmarks:', error);
+            console.error('❌ SmartBookmarks load error:', error);
             return [];
         }
     }

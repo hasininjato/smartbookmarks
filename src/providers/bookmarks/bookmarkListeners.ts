@@ -11,11 +11,11 @@ export interface BookmarkListenerDeps {
 }
 
 /**
- * Enregistre les listeners VS Code qui maintiennent les signets synchronisés
- * avec les modifications de texte, les renommages et les suppressions de fichiers.
+ * Registers VS Code listeners that keep bookmarks synchronized
+ * with text changes, file renames, and file deletions.
  */
 export function registerBookmarkListeners(deps: BookmarkListenerDeps): void {
-    // 1. Modifications de texte (Déplacement & Suppression dynamique)
+    // 1. Text changes (Dynamic Movement & Deletion)
     vscode.workspace.onDidChangeTextDocument((event) => {
         const filePath = event.document.uri.fsPath;
         const fileBookmarks = deps.getForFile(filePath);
@@ -37,7 +37,7 @@ export function registerBookmarkListeners(deps: BookmarkListenerDeps): void {
         }
     });
 
-    // 2. Renommage de fichiers/dossiers
+    // 2. File/folder renames
     vscode.workspace.onDidRenameFiles((event) => {
         let hasChanged = false;
 
@@ -47,9 +47,9 @@ export function registerBookmarkListeners(deps: BookmarkListenerDeps): void {
 
             const affectedBookmarks = deps.getForFile(oldPath);
             for (const bookmark of affectedBookmarks) {
-                // Le chemin fait partie de la clé d'index : on passe par renameBookmarkFile
-                // pour que l'index par fichier reste cohérent (sinon getForFile(newPath)
-                // ne retrouverait plus le signet).
+                // The path is part of the index key: use renameBookmarkFile
+                // so that the per-file index remains consistent (otherwise getForFile(newPath)
+                // would no longer find the bookmark).
                 deps.renameBookmarkFile(bookmark, newPath);
                 bookmark.updatedAt = Date.now();
                 hasChanged = true;
@@ -61,7 +61,7 @@ export function registerBookmarkListeners(deps: BookmarkListenerDeps): void {
         }
     });
 
-    // 3. Suppression de fichiers OU dossiers
+    // 3. File OR folder deletion
     vscode.workspace.onDidDeleteFiles((event) => {
         let hasChanged = false;
 

@@ -11,7 +11,7 @@ export class RenameBookmarkCommand {
     ) { }
 
     public async execute(node?: BookmarkTreeItem): Promise<void> {
-        // Si invoqué via F2, node est undefined. On récupère la sélection active du TreeView.
+        // If invoked via F2, node is undefined. Retrieve the active selection from the TreeView.
         let targetBookmark = node?.bookmark;
 
         if (!targetBookmark && this.treeView && this.treeView.selection.length > 0) {
