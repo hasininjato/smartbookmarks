@@ -6,8 +6,16 @@
   "license": "MIT",
   "l10n": "./l10n",
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.134.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hasininjato/smartbookmarks"
+  },
+  "bugs": {
+    "url": "https://github.com/hasininjato/smartbookmarks/issues"
+  },
+  "homepage": "https://github.com/hasininjato/smartbookmarks#readme",
   "categories": [
     "Other"
   ],
