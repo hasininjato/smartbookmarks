@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const renameCommand = new RenameBookmarkCommand(provider, treeView);
 
-  // Fonction pour mettre à jour le badge et le tooltip au survol de l'icône
+  // Function to update the badge and tooltip when hovering over the icon
   const updateBadgeAndTooltip = () => {
     const totalBookmarks = provider.getBookmarks().length;
 
@@ -50,13 +50,13 @@ export function activate(context: vscode.ExtensionContext): void {
         ? vscode.l10n.t('{0} bookmarks', totalBookmarks)
         : vscode.l10n.t('{0} bookmark', totalBookmarks);
 
-      // 1. Le badge numéroté sur l'icône de la barre d'activités
+      // 1. Numbered badge on the Activity Bar icon
       treeView.badge = {
         value: totalBookmarks,
         tooltip: formattedCount
       };
 
-      // 2. Définit le titre et le sous-titre pour former "Smart Bookmarks — N bookmarks"
+      // 2. Set the title and description to display "Smart Bookmarks — N bookmarks"
       treeView.title = 'Smart Bookmarks';
       treeView.description = `– ${formattedCount}`;
     } else {
@@ -66,16 +66,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   };
 
-  // Initialisation au démarrage
+  // Initialize on startup
   updateBadgeAndTooltip();
 
-  // Écoute des modifications de signets pour rafraîchir le badge
+  // Listen for bookmark changes to refresh the badge
   const onBookmarksChangedSub = provider.onDidChangeBookmarks(() => {
     updateBadgeAndTooltip();
   });
 
   context.subscriptions.push(
-    // Enregistrement des commandes standard
+    // Register standard commands
     vscode.commands.registerCommand(addCommand.commandId, () => addCommand.execute()),
     vscode.commands.registerCommand(nextCommand.commandId, () => nextCommand.execute()),
     vscode.commands.registerCommand(prevCommand.commandId, () => prevCommand.execute()),
@@ -84,17 +84,17 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(clearFileCommand.commandId, () => clearFileCommand.execute()),
     vscode.commands.registerCommand(addBookmarkWithCommentCmd.commandId, () => addBookmarkWithCommentCmd.execute()),
 
-    // Commande de renommage (F2 / Inline Edit)
+    // Rename command (F2 / Inline Edit)
     vscode.commands.registerCommand(renameCommand.commandId, (node?: BookmarkTreeItem) => renameCommand.execute(node)),
 
-    // Suppression d'un seul signet depuis le TreeView
+    // Delete a single bookmark from the TreeView
     vscode.commands.registerCommand('smartbookmarks.deleteSingleBookmark', (node: BookmarkTreeItem) => {
       if (node?.bookmark) {
         provider.delete(node.bookmark.id);
       }
     }),
 
-    // Corbeille sur la ligne d'un FICHIER avec popup de confirmation
+    // Trash icon on a FILE row with confirmation popup
     vscode.commands.registerCommand('smartbookmarks.deleteFileBookmarksFromTree', async (node: BookmarkTreeItem) => {
       if (node?.filePath) {
         const count = provider.getForFile(node.filePath).length;

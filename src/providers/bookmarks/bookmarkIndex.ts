@@ -1,8 +1,8 @@
 import { Bookmark } from '../../types';
 
 /**
- * Encapsule le stockage en mémoire des signets (Map principale + index par fichier)
- * pour permettre des recherches en O(1) par fichier.
+ * Encapsulates the in-memory bookmark storage (main Map + per-file index)
+ * to enable O(1) lookups by file.
  */
 export class BookmarkIndex {
     private bookmarks: Map<string, Bookmark> = new Map();

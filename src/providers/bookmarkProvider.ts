@@ -15,7 +15,7 @@ export class BookmarkProvider {
     constructor(context: vscode.ExtensionContext) {
         this.storage = new Storage(context);
         this.load();
-        void this.cleanOrphanBookmarks(); // Nettoyage asynchrone non-bloquant
+        void this.cleanOrphanBookmarks(); // Non-blocking asynchronous cleanup
 
         registerBookmarkListeners({
             getForFile: (filePath) => this.getForFile(filePath),
@@ -27,15 +27,15 @@ export class BookmarkProvider {
     }
 
     /**
-     * Récupère un signet à la ligne d'un fichier donné (cursorLine est en base 0)
+     * Retrieves a bookmark at a given file line (cursorLine is 0-based)
      */
     public getBookmark(filePath: string, cursorLine: number): Bookmark | undefined {
-        const line = cursorLine + 1; // Conversion en base 1 pour correspondre à bookmark.line
+        const line = cursorLine + 1; // Convert to 1-based to match bookmark.line
         return this.getForFile(filePath).find(b => b.line === line);
     }
 
     /**
-     * Met à jour un signet existant sur une ligne donnée sans recréer son ID ou sa date de création
+     * Updates an existing bookmark on a given line without recreating its ID or creation date
      */
     public updateBookmark(
         filePath: string,
@@ -58,7 +58,7 @@ export class BookmarkProvider {
             bookmark.symbolKind = updates.symbol.kind;
         }
 
-        // Utilisation de 'property' in updates pour autoriser la réinitialisation à undefined
+        // Using 'property' in updates to allow resetting the value to undefined
         if ('title' in updates) {
             bookmark.title = updates.title;
         }
@@ -66,7 +66,7 @@ export class BookmarkProvider {
             bookmark.comment = updates.comment;
         }
         if ('tag' in updates) {
-            bookmark.tag = updates.tag; // Réinitialise bien à undefined si aucun tag n'est choisi
+            bookmark.tag = updates.tag; // Properly resets to undefined if no tag is selected
         }
         if ('highlightRange' in updates) {
             bookmark.highlightRange = updates.highlightRange;
@@ -222,7 +222,7 @@ export class BookmarkProvider {
     }
 
     /**
- * Renomme un tag sur tous les signets existants qui l'utilisaient
+ * Renames a tag on all existing bookmarks that used it
  */
     public renameTagInBookmarks(oldTagLabel: string, newTagLabel: string): void {
         let hasChanges = false;
@@ -239,7 +239,7 @@ export class BookmarkProvider {
     }
 
     /**
-     * Notifie un changement sans modifier les données (pour forcer le rafraîchissement d'icône)
+     * Notifies a change without modifying the data (to force an icon refresh)
      */
     public refresh(): void {
         this.notifyAndSave();

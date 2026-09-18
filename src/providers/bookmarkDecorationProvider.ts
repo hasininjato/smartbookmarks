@@ -4,14 +4,14 @@ import { BookmarkProvider } from './bookmarkProvider';
 import { Bookmark, BookmarkTagConfig } from '../types';
 
 export class BookmarkDecorationProvider implements vscode.Disposable {
-    /** Unique couleur de l'extension */
+    /** Unique extension color */
     private static readonly BRAND_BLUE = '#2196F3';
 
-    /** Signet bleu (logo, resources/gutter.svg) pour les signets sans tag custom */
+    /** Blue bookmark (logo, resources/gutter.svg) for bookmarks without a custom tag */
     private defaultGutterDecorationType: vscode.TextEditorDecorationType;
-    /** Un type de décoration par tag custom (icône Codicon, bleue aussi) */
+    /** One decoration type per custom tag (Codicon icon, also blue) */
     private tagGutterDecorationTypes: Map<string, vscode.TextEditorDecorationType> = new Map();
-    /** Ligne verticale bleue pour les signets de plage */
+    /** Blue vertical line for range bookmarks */
     private leftBorderDecorationType: vscode.TextEditorDecorationType;
     private disposables: vscode.Disposable[] = [];
     private iconUriCache: Map<string, vscode.Uri> = new Map();
@@ -55,7 +55,7 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
     }
 
     public updateDecorations(): void {
-        // Tous les éditeurs visibles (gère les splits), pas seulement l'actif
+        // All visible editors (handles splits), not just the active one
         for (const editor of vscode.window.visibleTextEditors) {
             this.decorateEditor(editor);
         }
@@ -76,18 +76,18 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
 
             const lineRange = editor.document.lineAt(lineIndex).range;
 
-            // Tag custom avec icône configurée ? Sinon signet bleu par défaut
+            // Custom tag with a configured icon? Otherwise use the default blue bookmark
             const tag = bookmark.tag;
             const tagConfig = tag
                 ? userTags.find(t => t.label.toUpperCase() === tag.toUpperCase())
                 : undefined;
             const hasTagIcon = !!(tagConfig && tagConfig.icon);
 
-            // Hover : icône Codicon + symbole + ligne (+ tag)
+            // Hover: Codicon icon + symbol + line (+ tag)
             const hover = new vscode.MarkdownString();
             hover.supportThemeIcons = true;
             hover.appendMarkdown(
-                `${hasTagIcon ? tagConfig!.icon : '$(bookmark-filled)'} **${bookmark.symbolName}** (Ligne ${bookmark.line})`
+                `${hasTagIcon ? tagConfig!.icon : '$(bookmark-filled)'} **${bookmark.symbolName}** (Line ${bookmark.line})`
             );
             if (tag) {
                 hover.appendMarkdown(` - \`[${tag}]\``);
@@ -95,7 +95,7 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
 
             const dec: vscode.DecorationOptions = { range: lineRange, hoverMessage: hover };
 
-            // Ligne verticale bleue : appliquée à toute plage, tagguée ou non
+            // Blue vertical line: applied to the entire range, tagged or not
             if (bookmark.highlightRange) {
                 leftBorderRanges.push(new vscode.Range(
                     bookmark.highlightRange.startLine, 0,
@@ -112,25 +112,25 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
             }
         }
 
-        // 1. Signets par défaut → logo bleu
+        // 1. Default bookmarks → blue logo
         editor.setDecorations(this.defaultGutterDecorationType, defaultDecs);
 
-        // 2. Tags custom → leur icône Codicon (bleue), distingués par la forme
+        // 2. Custom tags → their Codicon icon (blue), distinguished by shape
         for (const [key, decs] of tagDecs.entries()) {
             editor.setDecorations(this.getOrCreateTagDecorationType(key, userTags), decs);
         }
-        // Vide les tags qui n'ont plus de signet dans ce fichier
+        // Clear tags that no longer have a bookmark in this file
         for (const [key, decType] of this.tagGutterDecorationTypes.entries()) {
             if (!tagDecs.has(key)) {
                 editor.setDecorations(decType, []);
             }
         }
 
-        // 3. Ligne verticale bleue des plages
+        // 3. Blue vertical line for ranges
         editor.setDecorations(this.leftBorderDecorationType, leftBorderRanges);
     }
 
-    /** Crée (ou réutilise) le type de décoration d'un tag custom */
+    /** Creates (or reuses) the decoration type for a custom tag */
     private getOrCreateTagDecorationType(
         tagKey: string,
         userTags: BookmarkTagConfig[]
@@ -153,7 +153,7 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
         return decType;
     }
 
-    /** Charge un SVG Codicon et le teint en bleu (Data URI, avec cache) */
+    /** Loads a Codicon SVG and tints it blue (Data URI, with cache) */
     private getOrCreateTintedIconUri(iconName: string): vscode.Uri {
         const cached = this.iconUriCache.get(iconName);
         if (cached) { return cached; }

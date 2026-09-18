@@ -43,18 +43,18 @@ export class BookmarkTreeItem extends vscode.TreeItem {
                 ? userTags.find(t => t.label.toUpperCase() === bookmark.tag!.toUpperCase())
                 : undefined;
 
-            // --- Icône de l'arbre ---
+            // --- Tree icon ---
             if (tagConfig && tagConfig.icon) {
-                // Tag custom : icône Codicon teintée en bleu
+                // Custom tag: Codicon tinted blue
                 const rawIcon = tagConfig.icon;
                 const cleanIconName = rawIcon.replace(/^\$\((.*?)\).*/, '$1');
                 this.iconPath = this.getOrCreateTintedIconUri(cleanIconName);
             } else {
-                // Pas de tag : logo bleu (gutter.svg)
+                // No tag: blue logo (gutter.svg)
                 if (this.extensionUri) {
                     this.iconPath = vscode.Uri.joinPath(this.extensionUri, 'resources', 'gutter.svg');
                 } else {
-                    // Fallback si extensionUri non disponible
+                    // Fallback if extensionUri is not available
                     this.iconPath = new vscode.ThemeIcon('bookmark');
                 }
             }
@@ -133,7 +133,7 @@ export class BookmarkTreeItem extends vscode.TreeItem {
         }
     }
 
-    /** Charge un SVG Codicon et le teint en bleu (Data URI, avec cache) */
+    /** Loads a Codicon SVG and tints it blue (Data URI, with cache) */
     private getOrCreateTintedIconUri(iconName: string): vscode.Uri {
         const cached = this.iconUriCache.get(iconName);
         if (cached) { return cached; }

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 
 export function getExtendedPresetIcons(): { label: string; description: string }[] {
     return [
-        // 🛠️ Développement & Code
+        // 🛠️ Development & Code
         { label: '$(bug) bug', description: vscode.l10n.t('Bugs, anomalies') },
         { label: '$(code) code', description: vscode.l10n.t('Code snippet, function') },
         { label: '$(tools) tools', description: vscode.l10n.t('Tooling, refactoring, helpers') },
@@ -14,14 +14,14 @@ export function getExtendedPresetIcons(): { label: string; description: string }
         { label: '$(git-merge) git-merge', description: vscode.l10n.t('Git branching, merge') },
         { label: '$(bracket) bracket', description: vscode.l10n.t('Structure, brackets') },
 
-        // 🛡️ Sécurité & Performance
+        // 🛡️ Security & Performance
         { label: '$(shield) shield', description: vscode.l10n.t('Security, authentication, tokens') },
         { label: '$(lock) lock', description: vscode.l10n.t('Permissions, restricted access') },
         { label: '$(key) key', description: vscode.l10n.t('API keys, secrets') },
         { label: '$(pulse) pulse', description: vscode.l10n.t('Monitoring, metrics, health') },
         { label: '$(flame) flame', description: vscode.l10n.t('High urgency, hotfix') },
 
-        // 📋 Organisation & Tâches
+        // 📋 Organization & Tasks
         { label: '$(checklist) checklist', description: vscode.l10n.t('Tasks, TODOs, checks') },
         { label: '$(notebook) notebook', description: vscode.l10n.t('Documentation notes') },
         { label: '$(eye) eye', description: vscode.l10n.t('To review, Code Review') },
@@ -30,7 +30,7 @@ export function getExtendedPresetIcons(): { label: string; description: string }
         { label: '$(bookmark) bookmark', description: vscode.l10n.t('Standard bookmark') },
         { label: '$(tag) tag', description: vscode.l10n.t('Standard tag') },
 
-        // ⚠️ Statuts & Alertes
+        // ⚠️ Status & Alerts
         { label: '$(star) star', description: vscode.l10n.t('Important, favorite') },
         { label: '$(alert) alert', description: vscode.l10n.t('Warning, attention') },
         { label: '$(warning) warning', description: vscode.l10n.t('Critical point') },
