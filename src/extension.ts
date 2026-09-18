@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext): void {
   provider = new BookmarkProvider(context);
   tracker = new SymbolTracker(provider);
   decorationProvider = new BookmarkDecorationProvider(provider, context);
-  treeViewProvider = new BookmarkTreeViewProvider(provider);
+  treeViewProvider = new BookmarkTreeViewProvider(provider, context.extensionUri);
   statusBarProvider = new BookmarkStatusBarProvider(provider);
 
   const addCommand = new AddBookmarkCommand(provider);

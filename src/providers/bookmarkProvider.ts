@@ -117,7 +117,7 @@ export class BookmarkProvider {
             lineTextContext,
             createdAt: now,
             updatedAt: now,
-            author: user.name,
+            author: user.email,
             createdDateFormatted: formattedDate,
             highlightRange,
             comment: comment?.trim() || undefined,
