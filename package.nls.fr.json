@@ -1,5 +1,5 @@
 {
-  "extension.displayName": "Smart Bookmarks",
+  "extension.displayName": "Smart Code Bookmarks",
   "extension.description": "Des signets qui suivent vos symboles de code et non les numéros de ligne",
   "viewsContainers.smartBookmarksContainer": "Smart Bookmarks",
   "views.smartBookmarksView": "Smart Bookmarks",

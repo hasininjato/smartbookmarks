@@ -1,6 +1,8 @@
 # Smart Bookmarks
 
-![Texte alternatif](resources/logo.png)
+<p align="center">
+  <img src="https://github.com/hasininjato/smartbookmarks/blob/main/resources/smartbookmarks-readme.png" alt="Smart Bookmarks — Code moves. Bookmarks follow." height="250">
+</p>
 
 **Bookmarks that follow your code, not your line numbers.**
 

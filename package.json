@@ -2,9 +2,11 @@
   "name": "smartbookmarks",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "license": "MIT",
   "l10n": "./l10n",
+  "publisher": "rojovao",
+  "icon": "resources/icon.png",
   "engines": {
     "vscode": "^1.134.0"
   },
