@@ -2,7 +2,7 @@
   "name": "smartbookmarks",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "l10n": "./l10n",
   "publisher": "rojovao",

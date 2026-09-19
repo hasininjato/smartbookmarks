@@ -43,3 +43,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Refactored QuickPick lifecycle event handlers (`onDidAccept` / `onDidHide`) to prevent double-resolution and focus bugs.
 - Standardization of the colors of tag icons and the gutter (#2196F3)
 - Automatic and intelligent detection of the identity of the person creating the bookmark (Git project or non-Git)
+- Version of the extension
+- Icon in VSCode marketplace
+- Banner in readme
