@@ -1,7 +1,7 @@
 # Smart Bookmarks
 
 <p align="center">
-  <img src="https://github.com/hasininjato/smartbookmarks/blob/main/resources/smartbookmarks-readme.png" alt="Smart Bookmarks — Code moves. Bookmarks follow." height="250">
+  <img src="https://raw.githubusercontent.com/hasininjato/smartbookmarks/main/resources/smartbookmarks-readme.png" alt="Smart Bookmarks — Code moves. Bookmarks follow." height="250">
 </p>
 
 **Bookmarks that follow your code, not your line numbers.**
