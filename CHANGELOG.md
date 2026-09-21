@@ -6,9 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ---
 
-## [0.1.0-beta.1] - 2026-09-18
+## [0.2.0] - 2026-09-21
+### Added
+- **Bookmark storage system refactoring**
+  - Strict data isolation: Replaced the single JSON array with a structured object. Bookmarks are now isolated by project (open workspace folder) or by file (for standalone files or files outside the workspace)
+  - Drastic performance improvement: Implemented in-memory caching. The JSON file is no longer read from disk on every operation, making bookmark addition and retrieval instantaneous
+  - Drastic performance improvement: Implemented in-memory caching. The JSON file is no longer read from disk on every operation, making bookmark addition and retrieval instantaneous
 
-### ➕ Added
+---
+
+
+## [0.1.0] - 2026-09-18
+
+### Added
 - **100% Custom Tag System**:
   - Default tag list starts **completely empty (0 default tags)** to give full control to the user.
   - Dynamic creation of new tags directly inside the QuickPick UI.
@@ -33,12 +43,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Internationalization (l10n)**:
   - Integrated localization support (`vscode.l10n`) for UI strings and prompts.
 
-### ⚙️ Configuration
+### Configuration
 - `smartbookmarks.persistBookmarks`: Enable/disable bookmark persistence in the workspace state.
 - `smartbookmarks.autoFollowSymbols`: Automatically track moving code symbols.
 - `smartbookmarks.tags`: Custom user tag configuration array.
 
-### 🛠️ Changed
+### Changed
 - Removed all hardcoded fallback tags (`TODO`, `FIXME`, `NOTE`) to ensure a completely neutral out-of-the-box installation.
 - Refactored QuickPick lifecycle event handlers (`onDidAccept` / `onDidHide`) to prevent double-resolution and focus bugs.
 - Standardization of the colors of tag icons and the gutter (#2196F3)
