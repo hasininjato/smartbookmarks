@@ -171,33 +171,7 @@
               "label"
             ]
           },
-          "default": [
-            {
-              "label": "NOTE",
-              "icon": "notebook",
-              "description": "Remarque ou note d'information"
-            },
-            {
-              "label": "FIXME",
-              "icon": "tools",
-              "description": "Code à corriger ou refactoriser"
-            },
-            {
-              "label": "TODO",
-              "icon": "checklist",
-              "description": "Tâche restant à faire"
-            },
-            {
-              "label": "BUG",
-              "icon": "bug",
-              "description": "Problème ou dysfonctionnement"
-            },
-            {
-              "label": "REVIEW",
-              "icon": "eye",
-              "description": "Nécessite une revue de code"
-            }
-          ]
+          "default": []
         }
       }
     },

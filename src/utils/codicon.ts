@@ -3,48 +3,48 @@ import * as vscode from 'vscode';
 export function getExtendedPresetIcons(): { label: string; description: string }[] {
     return [
         // 🛠️ Development & Code
-        { label: '$(bug) bug', description: vscode.l10n.t('Bugs, anomalies') },
-        { label: '$(code) code', description: vscode.l10n.t('Code snippet, function') },
-        { label: '$(tools) tools', description: vscode.l10n.t('Tooling, refactoring, helpers') },
-        { label: '$(terminal) terminal', description: vscode.l10n.t('Commands, shell scripts') },
-        { label: '$(gear) gear', description: vscode.l10n.t('Configuration, settings') },
-        { label: '$(symbol-keyword) symbol-keyword', description: vscode.l10n.t('Business logic, algorithm') },
-        { label: '$(symbol-class) symbol-class', description: vscode.l10n.t('Component, class') },
-        { label: '$(database) database', description: vscode.l10n.t('DB query, data model') },
-        { label: '$(git-merge) git-merge', description: vscode.l10n.t('Git branching, merge') },
-        { label: '$(bracket) bracket', description: vscode.l10n.t('Structure, brackets') },
+        { label: '$(bug) bug', description: '' },
+        { label: '$(code) code', description: '' },
+        { label: '$(tools) tools', description: '' },
+        { label: '$(terminal) terminal', description: '' },
+        { label: '$(gear) gear', description: '' },
+        { label: '$(symbol-keyword) symbol-keyword', description: '' },
+        { label: '$(symbol-class) symbol-class', description: '' },
+        { label: '$(database) database', description: '' },
+        { label: '$(git-merge) git-merge', description: '' },
+        { label: '$(bracket) bracket', description: '' },
 
         // 🛡️ Security & Performance
-        { label: '$(shield) shield', description: vscode.l10n.t('Security, authentication, tokens') },
-        { label: '$(lock) lock', description: vscode.l10n.t('Permissions, restricted access') },
-        { label: '$(key) key', description: vscode.l10n.t('API keys, secrets') },
-        { label: '$(pulse) pulse', description: vscode.l10n.t('Monitoring, metrics, health') },
-        { label: '$(flame) flame', description: vscode.l10n.t('High urgency, hotfix') },
+        { label: '$(shield) shield', description: '' },
+        { label: '$(lock) lock', description: '' },
+        { label: '$(key) key', description: '' },
+        { label: '$(pulse) pulse', description: '' },
+        { label: '$(flame) flame', description: '' },
 
         // 📋 Organization & Tasks
-        { label: '$(checklist) checklist', description: vscode.l10n.t('Tasks, TODOs, checks') },
-        { label: '$(notebook) notebook', description: vscode.l10n.t('Documentation notes') },
-        { label: '$(eye) eye', description: vscode.l10n.t('To review, Code Review') },
-        { label: '$(pin) pin', description: vscode.l10n.t('Pinned, important reference') },
-        { label: '$(target) target', description: vscode.l10n.t('Goal, key milestone') },
-        { label: '$(bookmark) bookmark', description: vscode.l10n.t('Standard bookmark') },
-        { label: '$(tag) tag', description: vscode.l10n.t('Standard tag') },
+        { label: '$(checklist) checklist', description: '' },
+        { label: '$(notebook) notebook', description: '' },
+        { label: '$(eye) eye', description: '' },
+        { label: '$(pin) pin', description: '' },
+        { label: '$(target) target', description: '' },
+        { label: '$(bookmark) bookmark', description: '' },
+        { label: '$(tag) tag', description: '' },
 
         // ⚠️ Status & Alerts
-        { label: '$(star) star', description: vscode.l10n.t('Important, favorite') },
-        { label: '$(alert) alert', description: vscode.l10n.t('Warning, attention') },
-        { label: '$(warning) warning', description: vscode.l10n.t('Critical point') },
-        { label: '$(info) info', description: vscode.l10n.t('Additional information') },
-        { label: '$(verified) verified', description: vscode.l10n.t('Validated, verified') },
-        { label: '$(pass) pass', description: vscode.l10n.t('Success, test passed') },
+        { label: '$(star) star', description: '' },
+        { label: '$(alert) alert', description: '' },
+        { label: '$(warning) warning', description: '' },
+        { label: '$(info) info', description: '' },
+        { label: '$(verified) verified', description: '' },
+        { label: '$(pass) pass', description: '' },
 
         // 🎨 Interface & UI
-        { label: '$(heart) heart', description: vscode.l10n.t('Highlight, UI/UX') },
-        { label: '$(paintcan) paintcan', description: vscode.l10n.t('Design, styles, CSS') },
-        { label: '$(lightbulb) lightbulb', description: vscode.l10n.t('Idea, proposal') },
-        { label: '$(globe) globe', description: vscode.l10n.t('Network, API, Web, i18n') },
-        { label: '$(cloud) cloud', description: vscode.l10n.t('Cloud services, Serverless') },
-        { label: '$(server) server', description: vscode.l10n.t('Server, Backend') },
-        { label: '$(bell) bell', description: vscode.l10n.t('Notifications, events') }
+        { label: '$(heart) heart', description: '' },
+        { label: '$(paintcan) paintcan', description: '' },
+        { label: '$(lightbulb) lightbulb', description: '' },
+        { label: '$(globe) globe', description: '' },
+        { label: '$(cloud) cloud', description: '' },
+        { label: '$(server) server', description: '' },
+        { label: '$(bell) bell', description: '' }
     ];
 }

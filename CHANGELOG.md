@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Drastic performance improvement: Implemented in-memory caching. The JSON file is no longer read from disk on every operation, making bookmark addition and retrieval instantaneous
   - Dynamically manage the bookmarks list in the tree view based on whether the opened file is standalone or part of a workspace
 
+### Changed
+- No default tag. Users can create custom tags
+
 ---
 
 ## [0.1.0] - 2026-09-18
