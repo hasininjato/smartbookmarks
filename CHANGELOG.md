@@ -12,9 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Strict data isolation: Replaced the single JSON array with a structured object. Bookmarks are now isolated by project (open workspace folder) or by file (for standalone files or files outside the workspace)
   - Drastic performance improvement: Implemented in-memory caching. The JSON file is no longer read from disk on every operation, making bookmark addition and retrieval instantaneous
   - Drastic performance improvement: Implemented in-memory caching. The JSON file is no longer read from disk on every operation, making bookmark addition and retrieval instantaneous
+  - Dynamically manage the bookmarks list in the tree view based on whether the opened file is standalone or part of a workspace
 
 ---
-
 
 ## [0.1.0] - 2026-09-18
 

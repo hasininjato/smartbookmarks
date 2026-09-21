@@ -179,14 +179,62 @@ export class BookmarkTreeItem extends vscode.TreeItem {
 export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<BookmarkTreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<BookmarkTreeItem | undefined | void>();
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+    private disposables: vscode.Disposable[] = [];
 
     constructor(
         private provider: BookmarkProvider,
         private extensionUri: vscode.Uri
     ) {
-        this.provider.onDidChangeBookmarks(() => {
-            this.refresh();
-        });
+        this.disposables.push(
+            this.provider.onDidChangeBookmarks(() => this.refresh()),
+            vscode.window.onDidChangeActiveTextEditor(() => this.refresh()),
+            vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh())
+        );
+    }
+
+    private getContextKey(filePath: string): string {
+        const normalizedFilePath = path.normalize(filePath).toLowerCase();
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+
+        if (workspaceFolders && workspaceFolders.length > 0) {
+            for (const folder of workspaceFolders) {
+                const normalizedFolder = path.normalize(folder.uri.fsPath).toLowerCase();
+                if (normalizedFilePath.startsWith(normalizedFolder + path.sep) || normalizedFilePath === normalizedFolder) {
+                    return normalizedFolder;
+                }
+            }
+        }
+
+        return normalizedFilePath;
+    }
+
+    private getBookmarksForCurrentContext(): Bookmark[] {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return [];
+        }
+
+        const currentFilePath = editor.document.uri.fsPath;
+        const contextKey = this.getContextKey(currentFilePath);
+        const allBookmarks = this.provider.getBookmarks();
+
+        const isWorkspace = vscode.workspace.workspaceFolders?.some(
+            f => path.normalize(f.uri.fsPath).toLowerCase() === contextKey
+        ) || false;
+
+        if (isWorkspace) {
+            // Return all bookmarks inside this workspace
+            return allBookmarks.filter(b => {
+                const normalizedPath = path.normalize(b.filePath).toLowerCase();
+                return normalizedPath.startsWith(contextKey + path.sep) || normalizedPath === contextKey;
+            });
+        } else {
+            // Return bookmarks only for this exact file
+            return allBookmarks.filter(b => {
+                const normalizedPath = path.normalize(b.filePath).toLowerCase();
+                return normalizedPath === contextKey;
+            });
+        }
     }
 
     refresh(): void {
@@ -198,17 +246,17 @@ export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<Bookmar
     }
 
     async getChildren(element?: BookmarkTreeItem): Promise<BookmarkTreeItem[]> {
-        const allBookmarks = this.provider.getBookmarks();
+        const contextBookmarks = this.getBookmarksForCurrentContext();
 
-        if (allBookmarks.length === 0) {
+        if (contextBookmarks.length === 0) {
             return [];
         }
 
         if (!element) {
-            const filePaths = Array.from(new Set(allBookmarks.map(b => b.filePath)));
+            const filePaths = Array.from(new Set(contextBookmarks.map(b => b.filePath)));
 
             return filePaths.map(filePath => {
-                const count = allBookmarks.filter(b => b.filePath === filePath).length;
+                const count = contextBookmarks.filter(b => b.filePath === filePath).length;
                 const fileName = path.basename(filePath);
 
                 const item = new BookmarkTreeItem(
@@ -224,7 +272,7 @@ export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<Bookmar
         }
 
         if (element.filePath) {
-            const fileBookmarks = allBookmarks
+            const fileBookmarks = contextBookmarks
                 .filter(b => b.filePath === element.filePath)
                 .sort((a, b) => a.line - b.line);
 
@@ -240,5 +288,9 @@ export class BookmarkTreeViewProvider implements vscode.TreeDataProvider<Bookmar
         }
 
         return [];
+    }
+
+    dispose(): void {
+        this.disposables.forEach(d => d.dispose());
     }
 }

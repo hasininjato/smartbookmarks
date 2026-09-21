@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { BookmarkProvider } from './providers/bookmarkProvider';
 import { SymbolTracker } from './providers/symbolTracker';
 import { BookmarkDecorationProvider } from './providers/bookmarkDecorationProvider';
@@ -41,22 +42,66 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const renameCommand = new RenameBookmarkCommand(provider, treeView);
 
-  // Function to update the badge and tooltip when hovering over the icon
+  // Function to update the badge and tooltip based on the active file's context
   const updateBadgeAndTooltip = () => {
-    const totalBookmarks = provider.getBookmarks().length;
+    const editor = vscode.window.activeTextEditor;
+    let count = 0;
+    let contextLabel = '';
 
-    if (totalBookmarks > 0) {
-      const formattedCount = totalBookmarks > 1
-        ? vscode.l10n.t('{0} bookmarks', totalBookmarks)
-        : vscode.l10n.t('{0} bookmark', totalBookmarks);
+    if (editor) {
+      const currentFilePath = editor.document.uri.fsPath;
+      const normalizedFilePath = path.normalize(currentFilePath).toLowerCase();
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+
+      let contextKey = normalizedFilePath;
+      let isWorkspace = false;
+
+      if (workspaceFolders && workspaceFolders.length > 0) {
+        for (const folder of workspaceFolders) {
+          const normalizedFolder = path.normalize(folder.uri.fsPath).toLowerCase();
+          if (normalizedFilePath.startsWith(normalizedFolder + path.sep) || normalizedFilePath === normalizedFolder) {
+            contextKey = normalizedFolder;
+            isWorkspace = true;
+            break;
+          }
+        }
+      }
+
+      const allBookmarks = provider.getBookmarks();
+
+      if (isWorkspace) {
+        // Count bookmarks for the entire workspace
+        count = allBookmarks.filter(b => {
+          const p = path.normalize(b.filePath).toLowerCase();
+          return p.startsWith(contextKey + path.sep) || p === contextKey;
+        }).length;
+        contextLabel = vscode.l10n.t('in this workspace');
+      } else {
+        // Count bookmarks for this standalone file only
+        count = allBookmarks.filter(b => {
+          const p = path.normalize(b.filePath).toLowerCase();
+          return p === contextKey;
+        }).length;
+        contextLabel = vscode.l10n.t('in this file');
+      }
+    } else {
+      // Fallback when no file is open: show global total
+      count = provider.getBookmarks().length;
+      contextLabel = vscode.l10n.t('total');
+    }
+
+    if (count > 0) {
+      const formattedCount = count > 1
+        ? vscode.l10n.t('{0} bookmarks', count)
+        : vscode.l10n.t('{0} bookmark', count);
 
       // 1. Numbered badge on the Activity Bar icon
       treeView.badge = {
-        value: totalBookmarks,
-        tooltip: formattedCount
+        value: count,
+        tooltip: `Smart Bookmarks – ${formattedCount} ${contextLabel}`
       };
 
-      // 2. Set the title and description to display "Smart Bookmarks — N bookmarks"
+      // 2. Set the title and description
       treeView.title = 'Smart Bookmarks';
       treeView.description = `– ${formattedCount}`;
     } else {
@@ -69,10 +114,10 @@ export function activate(context: vscode.ExtensionContext): void {
   // Initialize on startup
   updateBadgeAndTooltip();
 
-  // Listen for bookmark changes to refresh the badge
-  const onBookmarksChangedSub = provider.onDidChangeBookmarks(() => {
-    updateBadgeAndTooltip();
-  });
+  // Listen for changes to refresh the badge
+  const onBookmarksChangedSub = provider.onDidChangeBookmarks(() => updateBadgeAndTooltip());
+  const onActiveEditorChangedSub = vscode.window.onDidChangeActiveTextEditor(() => updateBadgeAndTooltip());
+  const onWorkspaceChangedSub = vscode.workspace.onDidChangeWorkspaceFolders(() => updateBadgeAndTooltip());
 
   context.subscriptions.push(
     // Register standard commands
@@ -111,14 +156,17 @@ export function activate(context: vscode.ExtensionContext): void {
         }
       }
     }),
+
     treeView,
     onBookmarksChangedSub,
+    onActiveEditorChangedSub,
+    onWorkspaceChangedSub,
     tracker,
     decorationProvider,
     statusBarProvider
   );
 
-  vscode.window.showInformationMessage(vscode.l10n.t('📚 Smart Bookmarks ready!'));
+  vscode.window.showInformationMessage(vscode.l10n.t('Smart Bookmarks ready!'));
 }
 
 export function deactivate(): void { }
