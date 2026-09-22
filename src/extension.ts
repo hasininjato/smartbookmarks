@@ -114,10 +114,18 @@ export function activate(context: vscode.ExtensionContext): void {
   // Initialize on startup
   updateBadgeAndTooltip();
 
+  // Reorganize bookmarks on startup (migrates standalone files into workspaces if applicable)
+  provider.storage.reorganizeByContext();
+
   // Listen for changes to refresh the badge
   const onBookmarksChangedSub = provider.onDidChangeBookmarks(() => updateBadgeAndTooltip());
   const onActiveEditorChangedSub = vscode.window.onDidChangeActiveTextEditor(() => updateBadgeAndTooltip());
-  const onWorkspaceChangedSub = vscode.workspace.onDidChangeWorkspaceFolders(() => updateBadgeAndTooltip());
+
+  // Reorganize bookmarks when workspace folders change and update badge
+  const onWorkspaceChangedSub = vscode.workspace.onDidChangeWorkspaceFolders(() => {
+    provider.storage.reorganizeByContext();
+    updateBadgeAndTooltip();
+  });
 
   context.subscriptions.push(
     // Register standard commands

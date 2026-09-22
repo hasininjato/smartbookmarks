@@ -133,4 +133,43 @@ export class Storage {
             return [];
         }
     }
+
+    /**
+ * Reorganizes all bookmarks based on current workspace context.
+ * Migrates standalone bookmarks into their workspace if the folder is now open.
+ * Should be called when workspace folders change or on extension startup.
+ */
+    reorganizeByContext(): void {
+        try {
+            // Load ALL bookmarks from ALL keys (flattened)
+            const allBookmarks: Bookmark[] = [];
+            const store = this.loadAllRaw();
+
+            for (const key in store) {
+                const rawBookmarks = store[key];
+                for (const b of rawBookmarks) {
+                    let range = new vscode.Range(0, 0, 0, 0);
+
+                    if (b.range && b.range.start && b.range.end) {
+                        range = new vscode.Range(
+                            b.range.start.line ?? 0,
+                            b.range.start.character ?? 0,
+                            b.range.end.line ?? 0,
+                            b.range.end.character ?? 0
+                        );
+                    }
+
+                    allBookmarks.push({
+                        ...b,
+                        range
+                    } as Bookmark);
+                }
+            }
+
+            // save() will automatically reorganize them using getKeyForFile()
+            this.save(allBookmarks);
+        } catch (error) {
+            console.error('❌ SmartBookmarks reorganizeByContext error:', error);
+        }
+    }
 }
