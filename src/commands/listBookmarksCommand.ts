@@ -1,10 +1,6 @@
 import * as vscode from 'vscode';
 import { BookmarkProvider } from '../providers/bookmarkProvider';
-import { Bookmark, BookmarkTagConfig } from '../types';
-
-interface BookmarkQuickPickItem extends vscode.QuickPickItem {
-    bookmark: Bookmark;
-}
+import { Bookmark, BookmarkTagConfig, BookmarkQuickPickItem } from '../types';
 
 export class ListBookmarksCommand {
     public readonly commandId = 'smartbookmarks.listBookmarks';

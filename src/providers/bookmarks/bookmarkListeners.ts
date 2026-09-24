@@ -1,14 +1,6 @@
 import * as vscode from 'vscode';
-import { Bookmark } from '../../types';
+import { Bookmark, BookmarkListenerDeps } from '../../types';
 import { handleTextChange } from './bookmarkTextChangeHandler';
-
-export interface BookmarkListenerDeps {
-    getForFile: (filePath: string) => Bookmark[];
-    getAllBookmarks: () => Bookmark[];
-    deleteBookmark: (id: string) => void;
-    renameBookmarkFile: (bookmark: Bookmark, newPath: string) => void;
-    notifyChanged: () => void;
-}
 
 /**
  * Registers VS Code listeners that keep bookmarks synchronized
