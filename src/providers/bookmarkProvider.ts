@@ -8,7 +8,7 @@ import { registerBookmarkListeners } from './bookmarks/bookmarkListeners';
 
 export class BookmarkProvider {
     private index: BookmarkIndex = new BookmarkIndex();
-    private storage: Storage;
+    public storage: Storage;  // Made public for extension.ts to call reorganizeByContext()
     private _onDidChangeBookmarks = new vscode.EventEmitter<void>();
     public readonly onDidChangeBookmarks = this._onDidChangeBookmarks.event;
 

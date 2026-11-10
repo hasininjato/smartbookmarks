@@ -3,12 +3,7 @@ import { BookmarkProvider } from '../providers/bookmarkProvider';
 import { Bookmark, BookmarkTagConfig, SymbolInfo } from '../types';
 import { getSymbolAtPosition } from '../utils/symbols';
 import { getExtendedPresetIcons } from '../utils/codicon';
-
-interface TagQuickPickItem extends vscode.QuickPickItem {
-    rawTag?: BookmarkTagConfig;
-    isCreateAction?: boolean;
-    isNoTagAction?: boolean;
-}
+import { TagQuickPickItem } from '../types';
 
 export class AddBookmarkWithCommentCommand {
     public readonly commandId = 'smartbookmarks.addBookmarkWithComment';

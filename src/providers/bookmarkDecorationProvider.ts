@@ -35,7 +35,7 @@ export class BookmarkDecorationProvider implements vscode.Disposable {
 
         this.leftBorderDecorationType = vscode.window.createTextEditorDecorationType({
             isWholeLine: true,
-            borderWidth: '0 0 0 4px',
+            borderWidth: '0 0 0 3px',
             borderStyle: 'solid',
             borderColor: BookmarkDecorationProvider.BRAND_BLUE
         });

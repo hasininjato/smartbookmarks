@@ -44,3 +44,21 @@ export interface BookmarkTagConfig {
     icon?: string; // E.g. 'bug', 'tools', or an emoji '🐛'
     description?: string;
 }
+
+export interface TagQuickPickItem extends vscode.QuickPickItem {
+    rawTag?: BookmarkTagConfig;
+    isCreateAction?: boolean;
+    isNoTagAction?: boolean;
+}
+
+export interface BookmarkQuickPickItem extends vscode.QuickPickItem {
+    bookmark: Bookmark;
+}
+
+export interface BookmarkListenerDeps {
+    getForFile: (filePath: string) => Bookmark[];
+    getAllBookmarks: () => Bookmark[];
+    deleteBookmark: (id: string) => void;
+    renameBookmarkFile: (bookmark: Bookmark, newPath: string) => void;
+    notifyChanged: () => void;
+}

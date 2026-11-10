@@ -8,9 +8,9 @@
 
 Smart Bookmarks is a VS Code extension designed to make code bookmarks more useful and resilient. Bookmarks can be attached to code symbols or to selected lines, with visual markers directly in the editor.
 
-## ✨ Features
+## Features
 
-### 🧠 Smart, semantic bookmarks
+### Smart, semantic bookmarks
 
 Create a bookmark on the code element under your cursor:
 
@@ -23,7 +23,7 @@ Create a bookmark on the code element under your cursor:
 
 Bookmarks store contextual information about the code, allowing them to remain useful after refactoring.
 
-### 📑 Bookmark a range of lines
+### Bookmark a range of lines
 
 Select one or more lines and create a bookmark for the entire selection.
 
@@ -37,7 +37,7 @@ This is useful for marking:
 * Several related lines
 * Code that does not correspond to a single symbol
 
-### 🔄 Resilient to code changes
+### Resilient to code changes
 
 Smart Bookmarks can automatically relocate bookmarks when code moves or changes.
 
@@ -49,7 +49,7 @@ The matching strategy progressively uses:
 4. Surrounding code context
 5. Fuzzy matching
 
-### 📝 Notes and tags
+### Notes and tags
 
 Attach context directly to your code by adding custom titles, multiline notes, and personalized tags to your bookmarks.
 
@@ -59,7 +59,7 @@ Smart Bookmarks starts with a completely clean slate (0 default tags). There are
 * Inline Management: Create, edit (label, icon, description), or delete tags directly inside the QuickPick menu (Ctrl+Shift+C)
 * Smart Propagation: Renaming a tag automatically updates all existing bookmarks assigned to that tag across your entire workspace
 
-### 📋 Bookmark panel
+### Bookmark panel
 
 The **Smart Bookmarks** view provides a centralized list of your bookmarks.
 
@@ -72,7 +72,7 @@ From the panel you can:
 * Delete all bookmarks belonging to a file
 * Delete all bookmarks
 
-### 🎨 Visual markers
+### Visual markers
 
 Bookmarks are displayed directly in the editor.
 
@@ -106,7 +106,7 @@ All commands are also available through the **Command Palette** (`Ctrl+Shift+P` 
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 1. Open a source file.
 2. Place your cursor on a function, class, method, variable, or line.
@@ -121,7 +121,7 @@ You can also use the Command Palette and search for **Smart Bookmark** commands.
 
 ---
 
-## 🎯 Why Smart Bookmarks?
+## Why Smart Bookmarks?
 
 Traditional bookmarks are usually tied to a specific line:
 
@@ -157,7 +157,7 @@ This makes bookmarks much more useful during:
 
 ---
 
-## 🛠️ Technology
+## Technology
 
 Smart Bookmarks is built for VS Code using:
 
@@ -170,7 +170,7 @@ Smart Bookmarks is built for VS Code using:
 
 ---
 
-## 📌 Project Status
+## Project Status
 
 Smart Bookmarks is currently under active development.
 
@@ -178,6 +178,6 @@ The goal is to provide a lightweight, local-first bookmarking system that unders
 
 ---
 
-## 📄 License
+## License
 
 Open source. See the repository for license information.
